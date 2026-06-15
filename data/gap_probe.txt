@@ -1,0 +1,100 @@
+﻿.venv\Scripts\python.exe : SportyBet volleyball: no prematch rows from any source
+At C:\Users\okumu\AppData\Local\Temp\ps-script-72320864-0ea9-402f-ac14-82ba1a8e0d8e.ps1:77 char:54
++ ... PATH="src"; .venv\Scripts\python.exe scripts\probe_gaps.py 2>&1 | Out ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (SportyBet volle...from any source:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+Window: 72h
+
+bangbet      soccer       ev= 182 sample_mkts=108
+bangbet      tennis       ev= 368 sample_mkts=29
+bangbet      basketball   ev=  91 sample_mkts=253
+bangbet      volleyball   ev=   0 sample_mkts=0
+bangbet      handball     ev=  14 sample_mkts=37
+bangbet      baseball     ev=  24 sample_mkts=6
+bangbet      cricket      ev=   8 sample_mkts=3
+bangbet      ice_hockey   ev=  16 sample_mkts=75
+betika       soccer       ev= 131 sample_mkts=50
+betika       tennis       ev=  49 sample_mkts=4
+betika       basketball   ev=  36 sample_mkts=30
+betika       volleyball   ev=   0 sample_mkts=0
+betika       handball     ev=   5 sample_mkts=9
+betika       baseball     ev=  11 sample_mkts=18
+betika       cricket      ev=  12 sample_mkts=3
+betika       ice_hockey   ev=   5 sample_mkts=24
+betpawa      soccer       ev= 197 sample_mkts=75
+betpawa      tennis       ev= 195 sample_mkts=19
+betpawa      basketball   ev=  68 sample_mkts=29
+mozzartbet   soccer       ev= 177 sample_mkts=24
+mozzartbet   tennis       ev= 160 sample_mkts=20
+mozzartbet   basketball   ev=  63 sample_mkts=70
+mozzartbet   volleyball   ev=  14 sample_mkts=4
+mozzartbet   handball     ev=   7 sample_mkts=9
+mozzartbet   baseball     ev=  24 sample_mkts=3
+mozzartbet   cricket      ev=   0 sample_mkts=0
+mozzartbet   ice_hockey   ev=   0 sample_mkts=0
+odibets      soccer       ev= 121 sample_mkts=111
+odibets      tennis       ev= 108 sample_mkts=3
+odibets      basketball   ev=  32 sample_mkts=114
+odibets      volleyball   ev=   0 sample_mkts=0
+odibets      handball     ev=   2 sample_mkts=18
+odibets      baseball     ev=  13 sample_mkts=30
+odibets      cricket      ev=   2 sample_mkts=2
+odibets      ice_hockey   ev=  10 sample_mkts=54
+palmsbet     soccer       ev= 243 sample_mkts=61
+palmsbet     tennis       ev= 251 sample_mkts=40
+palmsbet     basketball   ev= 112 sample_mkts=43
+palmsbet     volleyball   ev=  15 sample_mkts=12
+palmsbet     handball     ev=  15 sample_mkts=21
+palmsbet     baseball     ev=   0 sample_mkts=0
+palmsbet     cricket      ev=  77 sample_mkts=3
+palmsbet     ice_hockey   ev=  13 sample_mkts=12
+pepeta       soccer       ev= 121 sample_mkts=50
+pepeta       tennis       ev=   0 sample_mkts=0
+pepeta       basketball   ev=  38 sample_mkts=22
+pepeta       volleyball   ev=   0 sample_mkts=0
+pepeta       handball     ev=   5 sample_mkts=9
+pepeta       baseball     ev=  13 sample_mkts=21
+pepeta       cricket      ev=   0 sample_mkts=0
+pepeta       ice_hockey   ev=   5 sample_mkts=18
+shabiki      soccer       ev= 156 sample_mkts=23
+shabiki      tennis       ev= 135 sample_mkts=11
+shabiki      basketball   ev=  53 sample_mkts=2
+shabiki      volleyball   ev=   2 sample_mkts=9
+shabiki      handball     ev=   7 sample_mkts=1
+shabiki      baseball     ev=  24 sample_mkts=13
+shabiki      cricket      ev=  34 sample_mkts=3
+shabiki      ice_hockey   ev=  17 sample_mkts=22
+sportpesa    soccer       ev= 213 sample_mkts=3
+sportpesa    tennis       ev= 201 sample_mkts=3
+sportpesa    basketball   ev=  64 sample_mkts=3
+sportpesa    volleyball   ev=   0 sample_mkts=0
+sportpesa    handball     ev=  11 sample_mkts=0
+sportpesa    baseball     ev=  24 sample_mkts=0
+sportpesa    cricket      ev=   6 sample_mkts=3
+sportpesa    ice_hockey   ev=  16 sample_mkts=0
+sportybet    soccer       ev= 248 sample_mkts=19
+sportybet    tennis       ev= 277 sample_mkts=29
+sportybet    basketball   ev=  96 sample_mkts=154
+sportybet    volleyball   ev=   0 sample_mkts=0
+sportybet    handball     ev=  14 sample_mkts=3
+sportybet    baseball     ev=  24 sample_mkts=21
+sportybet    cricket      ev=  30 sample_mkts=3
+sportybet    ice_hockey   ev=  16 sample_mkts=35
+
+=== GAPS (0 events or 0 sample markets) ===
+  bangbet      volleyball   events=0 sample_mkts=0
+  betika       volleyball   events=0 sample_mkts=0
+  mozzartbet   cricket      events=0 sample_mkts=0
+  mozzartbet   ice_hockey   events=0 sample_mkts=0
+  odibets      volleyball   events=0 sample_mkts=0
+  palmsbet     baseball     events=0 sample_mkts=0
+  pepeta       tennis       events=0 sample_mkts=0
+  pepeta       volleyball   events=0 sample_mkts=0
+  pepeta       cricket      events=0 sample_mkts=0
+  sportpesa    volleyball   events=0 sample_mkts=0
+  sportpesa    handball     events=11 sample_mkts=0
+  sportpesa    baseball     events=24 sample_mkts=0
+  sportpesa    ice_hockey   events=16 sample_mkts=0
+  sportybet    volleyball   events=0 sample_mkts=0

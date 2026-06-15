@@ -1,0 +1,248 @@
+# Supplemental market name patterns for non-Sportradar bookmakers.
+# Matched case-insensitively; first matching market wins (order matters within sport).
+
+soccer:
+  match_result_1x2:
+    - "3 way"
+    - "1x2"
+    - "match result"
+    - "final result"
+    - "full time result"
+    - "1st half result"
+    - "2nd half result"
+  over_under_goals:
+    - "total goals"
+    - "over/under"
+    - "goals over/under"
+    - "match goals"
+    - "1st half - over/under"
+    - "2nd half - over/under"
+    - "over/under - early goals"
+  team_totals:
+    - "total goals over/under home team"
+    - "total goals over/under away team"
+    - "home team over/under"
+    - "away team over/under"
+    - "over/under | {home}"
+    - "over/under | {away}"
+    - "team total"
+  btts:
+    - "both teams to score"
+    - "gg/ng"
+    - "both teams score"
+    - "both teams to score (gg/ng)"
+  asian_handicap:
+    - "asian handicap"
+    - "goal handicap"
+    - "goals handicap"
+    - "handicap - full"
+    - "2-way handicap"
+    - "handicap win"
+  european_handicap:
+    - "european handicap"
+    - "euro handicap"
+    - "3-way handicap"
+    - "3 way handicap"
+    - "handicap (3 way)"
+    - "handicap 3 way"
+    - "handicap 1x2"
+    - "goals handicap 3 way"
+  draw_no_bet:
+    - "draw no bet"
+    - "dnb"
+    - "who will win"
+    - "if draw, money back"
+    - "money back"
+  half_totals:
+    - "1st half - total"
+    - "2nd half - total"
+    - "half total"
+    - "1st half total"
+    - "2nd half total"
+  corners_totals:
+    - "total corners"
+    - "corners over/under"
+    - "corner match bet"
+    - "corners - over/under"
+
+tennis:
+  match_winner:
+    - "match winner"
+    - "2 way"
+    - "winner"
+    - "match result"
+  set_betting:
+    - "set betting"
+    - "correct score"
+  game_handicap:
+    - "game handicap"
+    - "handicap games"
+    - "xth set - game handicap"
+  total_games:
+    - "total games"
+    - "games over/under"
+    - "xth set - total games"
+  correct_set_score:
+    - "correct set score"
+    - "set score"
+    - "correct score"
+  next_game_winner:
+    - "next game"
+    - "game winner"
+
+basketball:
+  moneyline:
+    - "2 way"
+    - "moneyline"
+    - "match winner"
+    - "2 way - ot"
+  spread:
+    - "handicap"
+    - "spread"
+    - "points handicap"
+    - "point handicap"
+    - "1st half - handicap"
+    - "2nd half - handicap"
+    - "xth quarter - handicap"
+  totals:
+    - "total points"
+    - "over/under"
+    - "match points"
+    - "total (incl. overtime)"
+    - "total (incl. extra innings)"
+    - "xth period - total"
+  quarter_totals:
+    - "quarter points"
+    - "1st quarter"
+    - "2nd quarter"
+    - "3rd quarter"
+    - "4th quarter"
+    - "xth quarter - total"
+    - "1st quarter - total"
+    - "2nd quarter - total"
+    - "3rd quarter - total"
+    - "4th quarter - total"
+  draw_no_bet:
+    - "draw no bet"
+    - "dnb"
+    - "xth quarter - draw no bet"
+  half_totals:
+    - "first half"
+    - "half total"
+    - "total points - first half"
+    - "1st half - total"
+    - "2nd half - total"
+    - "1st half - over/under"
+    - "2nd half - over/under"
+  team_totals:
+    - "team total"
+    - "home team over/under"
+    - "away team over/under"
+    - "1st half - home o/u"
+    - "1st half - away o/u"
+    - "home o/u (incl. overtime)"
+    - "away o/u (incl. overtime)"
+    - "competitor1 total"
+    - "competitor2 total"
+    - "xth quarter - competitor1 total"
+    - "xth quarter - competitor2 total"
+    - "home team total"
+    - "away team total"
+
+volleyball:
+  match_winner:
+    - "match winner"
+    - "2 way"
+    - "winner"
+  set_handicap:
+    - "set handicap"
+    - "handicap sets"
+  total_points:
+    - "total points"
+    - "points over/under"
+  correct_set_score:
+    - "correct set score"
+
+handball:
+  match_winner:
+    - "1x2"
+    - "3 way"
+    - "3 way winner"
+    - "match result"
+    - "match winner"
+  asian_handicap:
+    - "asian handicap"
+  european_handicap:
+    - "european handicap"
+    - "euro handicap"
+  totals:
+    - "total goals"
+    - "over/under"
+  team_totals:
+    - "team total"
+
+baseball:
+  moneyline:
+    - "2 way"
+    - "money line"
+    - "moneyline"
+    - "match winner"
+  run_line:
+    - "run line"
+  totals:
+    - "total runs"
+    - "over/under"
+    - "total (incl. extra innings)"
+  first_5_innings:
+    - "first 5 innings"
+    - "1st 5 innings"
+    - "innings 1 to 5 - winner"
+    - "innings 1 to 5 - handicap"
+  first_5_innings_totals:
+    - "innings 1 to 5 - total"
+    - "first 5 innings total"
+    - "innings 1 to 5 total"
+  team_totals:
+    - "team total"
+
+cricket:
+  match_winner:
+    - "match winner"
+    - "2 way"
+    - "winner"
+    - "final result"
+  over_under_runs:
+    - "total runs"
+    - "over/under runs"
+  session_betting:
+    - "session"
+  innings_totals:
+    - "innings total"
+    - "innings runs"
+  top_batsman:
+    - "top batsman"
+    - "top batter"
+
+ice_hockey:
+  match_result_1x2:
+    - "3 way - full time"
+    - "3 way winner"
+    - "match result"
+  moneyline:
+    - "2 way"
+    - "moneyline"
+    - "match winner"
+  european_handicap:
+    - "european handicap"
+    - "euro handicap"
+  puck_line:
+    - "puck line"
+  totals:
+    - "total goals"
+    - "over/under"
+  period_betting:
+    - "period"
+    - "1st period"
+    - "2nd period"
+  team_totals:
+    - "team total"

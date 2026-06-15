@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MoneyLine Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/admin_shell.css" />
+  <style>
+    .calc { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:.75rem 1rem; margin-bottom:.75rem; display:flex; flex-wrap:wrap; gap:1rem; align-items:flex-end; }
+    .calc label { display:block; font-size:.7rem; color:var(--muted); margin-bottom:.25rem; }
+    .calc input, .calc select { background:#0f172a; border:1px solid #334155; color:var(--text); padding:.45rem .65rem; border-radius:6px; font-family:inherit; }
+    .calc input { width:140px; }
+    .calc select { min-width:150px; }
+    .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:.65rem; margin-bottom:.75rem; }
+    .stat { background:var(--card); padding:.65rem .85rem; border-radius:8px; border:1px solid var(--border); }
+    .stat label { display:block; font-size:.65rem; color:var(--muted); text-transform:uppercase; }
+    .stat span { font-size:1.1rem; font-weight:600; }
+    table.arbs { width:100%; border-collapse:collapse; background:var(--card); }
+    table.arbs th, table.arbs td { padding:.5rem .65rem; text-align:left; border-bottom:1px solid var(--border); font-size:.8rem; vertical-align:top; }
+    table.arbs th { color:var(--muted); font-weight:500; position:sticky; top:0; background:#1e293b; }
+    .margin { color:var(--accent); font-weight:600; }
+    .legs { font-size:.76rem; line-height:1.4; }
+    .profit { color:var(--accent); font-size:.72rem; margin-top:.2rem; }
+    .place-bet { display:inline-block; margin-left:.15rem; padding:.12rem .4rem; border-radius:5px; background:#166534; color:#ecfdf5; text-decoration:none; font-weight:600; font-size:.68rem; white-space:nowrap; }
+    .place-bet:hover { background:#15803d; }
+    .premium-tag { color:#fbbf24; font-size:.7rem; }
+    .hint { font-size:.8rem; color:var(--muted); }
+  </style>
+</head>
+<body class="shell">
+  <div class="shell-layout">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <h1>MoneyLine</h1>
+        <p>Admin console</p>
+      </div>
+      <nav class="sidebar-nav">
+        <a class="nav-link" data-page="arbs" href="/admin">📊 Arbs</a>
+        <a class="nav-link" data-page="subscribers" href="/dashboard">👥 Subscribers</a>
+        <a class="nav-link" data-page="public" href="/">🌐 Public site</a>
+      </nav>
+      <div class="sidebar-footer">Live WebSocket feed</div>
+    </aside>
+
+    <div class="shell-main">
+      <header class="shell-topbar">
+        <div>
+          <h2 style="margin:0;font-size:1.15rem">Arbitrage feed</h2>
+          <span id="status" style="color:var(--muted);font-size:.85rem">Connecting…</span>
+        </div>
+        <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+          <span id="conn" class="badge">WS</span>
+          <button id="refresh" class="btn" type="button">Scan now</button>
+        </div>
+      </header>
+
+      <main class="shell-content">
+        <div class="calc">
+          <div>
+            <label for="bankroll">Bankroll (KES)</label>
+            <input id="bankroll" type="number" min="100" step="100" value="10000" />
+          </div>
+          <div>
+            <label for="sport-filter">Sport</label>
+            <select id="sport-filter">
+              <option value="">All sports</option>
+              <option value="soccer">⚽ Soccer</option>
+              <option value="tennis">🎾 Tennis</option>
+              <option value="basketball">🏀 Basketball</option>
+              <option value="volleyball">🏐 Volleyball</option>
+              <option value="handball">🤾 Handball</option>
+              <option value="baseball">⚾ Baseball</option>
+              <option value="cricket">🏏 Cricket</option>
+              <option value="ice_hockey">🏒 Ice Hockey</option>
+            </select>
+          </div>
+          <span class="hint">Premium band has no upper margin cap</span>
+        </div>
+        <div class="stats">
+          <div class="stat"><label>All arbs</label><span id="total">—</span></div>
+          <div class="stat"><label>Free ≤3%</label><span id="free">—</span></div>
+          <div class="stat"><label>Premium &gt;3%</label><span id="premium">—</span></div>
+          <div class="stat"><label>Events</label><span id="events">—</span></div>
+          <div class="stat"><label>Best margin</label><span id="best">—</span></div>
+          <div class="stat"><label>By sport</label><span id="by-sport" style="font-size:.75rem">—</span></div>
+          <div class="stat"><label>Updated</label><span id="updated">—</span></div>
+          <div class="stat"><label>Weak books</label><span id="weak-books" style="font-size:.72rem">—</span></div>
+          <div class="stat"><label>Match review</label><span id="review-count">—</span></div>
+        </div>
+        <div class="panel-card">
+          <div class="table-wrap">
+            <table class="arbs">
+              <thead><tr><th>Margin</th><th>Sport</th><th>Fixture</th><th>Market</th><th>Legs &amp; stakes</th></tr></thead>
+              <tbody id="rows"></tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/static/admin_shell.js"></script>
+  <script src="/static/arb_calc.js"></script>
+  <script>
+    const wsUrl = `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws/scan`;
+    const FREE_MAX = 3;
+    let ws, pingTimer, lastData = null;
+
+    window.MoneyLineShell.initSidebar("arbs");
+
+    function bankroll() {
+      return Math.max(0, Number(document.getElementById("bankroll").value) || 0);
+    }
+
+    function sportFilter() {
+      return document.getElementById("sport-filter").value;
+    }
+
+    function renderTable() {
+      if (!lastData) return;
+      const tbody = document.getElementById("rows");
+      let opps = lastData.opportunities || [];
+      const filter = sportFilter();
+      if (filter) opps = opps.filter(o => String(o.sport || "").toLowerCase() === filter);
+      const br = bankroll();
+      tbody.innerHTML = "";
+      if (!opps.length && !lastData.scanning) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:1.5rem;color:var(--muted)">No active arbs</td></tr>';
+        return;
+      }
+      opps.forEach(o => {
+        const isPremium = o.margin_pct > FREE_MAX;
+        const profit = calcProfit(o.legs, br);
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td class="margin">${Number(o.margin_pct).toFixed(2)}%${isPremium ? '<br><span class="premium-tag">premium</span>' : ""}</td>
+          <td>${fmtSportLabel(o.sport)}</td>
+          <td>${o.home_team} vs ${o.away_team}</td>
+          <td>${o.market_display || o.market_key}</td>
+          <td><div class="legs">${fmtLegsWithStakes(o.legs, br, o)}</div>
+          ${profit ? `<div class="profit">+${fmtKes(profit.profit)} profit</div>` : ""}</td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function render(data) {
+      if (data.type === "scan_start") {
+        document.getElementById("conn").textContent = "Scanning";
+        document.getElementById("conn").className = "badge scan";
+        document.getElementById("status").textContent = "Scan in progress…";
+        return;
+      }
+      if (data.type === "scan_error") {
+        document.getElementById("status").textContent = `Error: ${data.error || "scan failed"}`;
+        return;
+      }
+      if (data.type && data.type !== "scan_snapshot") return;
+
+      lastData = data;
+      document.getElementById("total").textContent = data.total ?? 0;
+      document.getElementById("free").textContent = data.free_count ?? "—";
+      document.getElementById("premium").textContent = data.premium_count ?? "—";
+      const d = data.diagnostics || {};
+      document.getElementById("events").textContent = d.events_collected ?? "—";
+      const best = d.best_cross_book_margin_pct;
+      document.getElementById("best").textContent = best != null ? `${Number(best).toFixed(2)}%` : "—";
+      const bySport = d.arbs_by_sport || {};
+      document.getElementById("by-sport").textContent = fmtBySportCounts(bySport);
+      document.getElementById("updated").textContent = data.scanned_at ? new Date(data.scanned_at).toLocaleString() : "—";
+      const weak = (d.weak_bookmakers || []).join(", ") || "none";
+      document.getElementById("weak-books").textContent = weak;
+      const paused = (d.books_paused || []).join(", ");
+      if (paused) {
+        document.getElementById("weak-books").textContent = `${weak} · paused: ${paused}`;
+      }
+      const reviewCount = d.match_review_count;
+      if (reviewCount != null) {
+        document.getElementById("review-count").textContent = `${reviewCount} queued`;
+      } else {
+        loadReviewCount();
+      }
+
+      const conn = document.getElementById("conn");
+      if (data.scanning) {
+        conn.textContent = "Scanning";
+        conn.className = "badge scan";
+        document.getElementById("status").textContent = "Scan running — last results below";
+      } else {
+        conn.textContent = "Live";
+        conn.className = "badge ok";
+        const sportCount = (d.supported_sports || []).length || d.sports_scanned || 8;
+        document.getElementById("status").textContent = `${data.total ?? 0} arbs · ${sportCount} sports · no premium cap`;
+      }
+      renderTable();
+    }
+
+    document.getElementById("bankroll").addEventListener("input", renderTable);
+    document.getElementById("sport-filter").addEventListener("change", renderTable);
+    document.getElementById("refresh").onclick = () => {
+      if (ws?.readyState === WebSocket.OPEN) {
+        const token = window.MoneyLineShell.getToken();
+        ws.send(token ? `scan ${token}` : "scan");
+      }
+    };
+
+    async function loadReviewCount() {
+      try {
+        const token = window.MoneyLineShell.getToken();
+        const q = token ? `?token=${encodeURIComponent(token)}` : "";
+        const resp = await fetch(`/api/ops/match-review${q}`);
+        if (!resp.ok) return;
+        const data = await resp.json();
+        document.getElementById("review-count").textContent = `${(data.items || []).length} queued`;
+      } catch (e) {}
+    }
+
+    function connect() {
+      ws = new WebSocket(wsUrl);
+      ws.onopen = () => { pingTimer = setInterval(() => { if (ws.readyState === 1) ws.send("ping"); }, 25000); };
+      ws.onclose = () => { clearInterval(pingTimer); setTimeout(connect, 3000); };
+      ws.onmessage = (ev) => { try { render(JSON.parse(ev.data)); } catch (e) { console.error(e); } };
+    }
+    connect();
+  </script>
+</body>
+</html>

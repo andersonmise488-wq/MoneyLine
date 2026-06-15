@@ -1,0 +1,30 @@
+# Canonical team names for cross-book entity resolution.
+# Keys are normalized via normalize_team() before lookup.
+# Add entries as false-match or missed-match issues are discovered.
+
+soccer:
+  "manchester united":
+    canonical_id: team:mu
+    aliases: [man utd, manchester utd, m united]
+  "manchester city":
+    canonical_id: team:mci
+    aliases: [man city, mc fc]
+  "bayern munich":
+    canonical_id: team:bayern
+    aliases: [bayern munchen, fc bayern, fc bayern munchen]
+  "wolverhampton wanderers":
+    canonical_id: team:wolves
+    aliases: [wolverhampton, wolves]
+  "tottenham hotspur":
+    canonical_id: team:spurs
+    aliases: [tottenham, spurs]
+
+tennis:
+  "novak djokovic":
+    canonical_id: player:djokovic
+    aliases: [djokovic n, n djokovic]
+
+basketball:
+  "los angeles lakers":
+    canonical_id: team:lal
+    aliases: [la lakers, lakers]

@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MoneyLine Live — Prematch</title>
+  <style>
+    :root { --bg:#0f1419; --card:#1a2332; --text:#e7ecf3; --muted:#8b9cb3; --accent:#3dd68c; --warn:#f5a623; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); }
+    header { padding: 1rem 1.5rem; border-bottom: 1px solid #2a3544; display: flex; justify-content: space-between; align-items: center; }
+    h1 { margin: 0; font-size: 1.25rem; }
+    .badge { font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 4px; background: #243044; color: var(--muted); }
+    .badge.ok { background: #1e3a2f; color: var(--accent); }
+    .badge.scan { background: #3a2e1e; color: var(--warn); }
+    main { padding: 1rem 1.5rem; }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem; margin-bottom: 1rem; }
+    .stat { background: var(--card); padding: 0.75rem 1rem; border-radius: 8px; }
+    .stat label { display: block; font-size: 0.7rem; color: var(--muted); text-transform: uppercase; }
+    .stat span { font-size: 1.25rem; font-weight: 600; }
+    table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 8px; overflow: hidden; }
+    th, td { padding: 0.6rem 0.75rem; text-align: left; border-bottom: 1px solid #2a3544; font-size: 0.85rem; }
+    th { color: var(--muted); font-weight: 500; }
+    .margin { color: var(--accent); font-weight: 600; }
+    .place-bet { display:inline-block; margin-left:.2rem; padding:.12rem .4rem; border-radius:5px; background:#166534; color:#ecfdf5; text-decoration:none; font-weight:600; font-size:.72rem; white-space:nowrap; }
+    .place-bet:hover { background:#15803d; }
+    button { background: #2563eb; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; }
+    button:disabled { opacity: 0.5; }
+    #status { color: var(--muted); font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>MoneyLine Prematch</h1>
+      <span id="status">Connecting…</span>
+    </div>
+    <div>
+      <span id="conn" class="badge">WS</span>
+      <button id="refresh" type="button">Scan now</button>
+    </div>
+  </header>
+  <main>
+    <div class="stats">
+      <div class="stat"><label>Arbs</label><span id="total">—</span></div>
+      <div class="stat"><label>Events</label><span id="events">—</span></div>
+      <div class="stat"><label>Markets</label><span id="markets">—</span></div>
+      <div class="stat"><label>Best margin</label><span id="best">—</span></div>
+      <div class="stat"><label>Updated</label><span id="updated">—</span></div>
+    </div>
+    <table>
+      <thead>
+        <tr><th>Margin</th><th>Fixture</th><th>Market</th><th>Legs</th></tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </main>
+  <script src="/static/arb_calc.js"></script>
+  <script>
+    const wsProto = location.protocol === "https:" ? "wss" : "ws";
+    const wsUrl = `${wsProto}://${location.host}/ws/scan`;
+    let ws;
+
+    function fmtLegs(o) {
+      return (o.legs || [])
+        .map((l) => {
+          const pick = fmtBetPick(o, l);
+          const link = l.place_bet_url
+            ? ` <a class="place-bet" href="${l.place_bet_url}" target="_blank" rel="noopener">Place Bet</a>`
+            : "";
+          return `${l.bookmaker} · ${pick}${link}`;
+        })
+        .join("<br>");
+    }
+
+    function render(data) {
+      if (data.type === "scan_start") {
+        document.getElementById("conn").textContent = "Scanning";
+        document.getElementById("conn").className = "badge scan";
+        document.getElementById("status").textContent = "Full prematch scan in progress…";
+        return;
+      }
+      if (data.type === "scan_error") {
+        document.getElementById("status").textContent = `Error: ${data.error}`;
+        return;
+      }
+      if (data.type && data.type !== "scan_snapshot") return;
+
+      document.getElementById("total").textContent = data.total ?? 0;
+      const d = data.diagnostics || {};
+      document.getElementById("events").textContent = d.events_collected ?? "—";
+      document.getElementById("markets").textContent = d.markets_collected ?? "—";
+      const best = d.best_cross_book_margin_pct;
+      document.getElementById("best").textContent = best != null ? `${Number(best).toFixed(2)}%` : "—";
+      document.getElementById("updated").textContent = data.scanned_at ? new Date(data.scanned_at).toLocaleString() : "—";
+
+      const conn = document.getElementById("conn");
+      if (data.scanning) {
+        conn.textContent = "Scanning";
+        conn.className = "badge scan";
+        document.getElementById("status").textContent = "Full prematch scan in progress…";
+      } else {
+        conn.textContent = "Live";
+        conn.className = "badge ok";
+        if (data.error) {
+          document.getElementById("status").textContent = `Error: ${data.error}`;
+        } else if ((data.total ?? 0) === 0 && best != null) {
+          document.getElementById("status").textContent =
+            `No arbs ≥3%. Closest cross-book margin: ${Number(best).toFixed(2)}%` +
+            (d.best_cross_book_label ? ` on ${d.best_cross_book_label}` : "");
+        } else if ((data.total ?? 0) === 0) {
+          document.getElementById("status").textContent = "Scanner idle — no prematch arbs ≥3% right now.";
+        } else {
+          document.getElementById("status").textContent = "Prematch feed connected";
+        }
+      }
+
+      const tbody = document.getElementById("rows");
+      tbody.innerHTML = "";
+      const opps = data.opportunities || [];
+      if (!opps.length && !data.scanning) {
+        const tr = document.createElement("tr");
+        const msg = best != null && best > 0
+          ? `No arbs detected yet. Best cross-book margin seen: ${Number(best).toFixed(2)}%`
+          : "Waiting for the first scan.";
+        tr.innerHTML = `<td colspan="4" style="color:var(--muted);text-align:center;padding:1.5rem">${msg}</td>`;
+        tbody.appendChild(tr);
+        return;
+      }
+      opps.slice(0, 50).forEach(o => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td class="margin">${Number(o.margin_pct).toFixed(2)}%</td>
+          <td>${o.home_team} vs ${o.away_team}</td>
+          <td>${o.market_display || o.market_key}</td>
+          <td>${fmtLegs(o)}</td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function connect() {
+      ws = new WebSocket(wsUrl);
+      ws.onopen = () => {
+        document.getElementById("conn").textContent = "Connected";
+        document.getElementById("conn").className = "badge ok";
+      };
+      ws.onclose = () => {
+        document.getElementById("conn").textContent = "Reconnecting";
+        document.getElementById("conn").className = "badge";
+        setTimeout(connect, 3000);
+      };
+      ws.onmessage = (ev) => {
+        try { render(JSON.parse(ev.data)); } catch (e) { console.error(e); }
+      };
+    }
+
+    document.getElementById("refresh").onclick = () => {
+      if (ws && ws.readyState === WebSocket.OPEN) ws.send("scan");
+    };
+
+    connect();
+  </script>
+</body>
+</html>

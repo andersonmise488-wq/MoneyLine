@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MoneyLine Subscribers</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/admin_shell.css" />
+</head>
+<body class="shell">
+  <div class="shell-layout">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <h1>MoneyLine</h1>
+        <p>Admin console</p>
+      </div>
+      <nav class="sidebar-nav">
+        <a class="nav-link" data-page="arbs" href="/admin">📊 Arbs</a>
+        <a class="nav-link" data-page="subscribers" href="/dashboard">👥 Subscribers</a>
+        <a class="nav-link" data-page="public" href="/">🌐 Public site</a>
+      </nav>
+      <div class="sidebar-footer">Prematch · Telegram alerts</div>
+    </aside>
+
+    <div class="shell-main">
+      <header class="shell-topbar">
+        <div>
+          <h2 style="margin:0;font-size:1.15rem">Subscribers</h2>
+          <span id="status" style="color:var(--muted);font-size:.85rem">Loading…</span>
+        </div>
+        <div class="token-bar">
+          <input id="admin-token" type="password" placeholder="Admin token (if set)" />
+          <button id="save-token" class="btn secondary" type="button">Save token</button>
+          <button id="refresh" class="btn" type="button">Refresh</button>
+        </div>
+      </header>
+
+      <main class="shell-content">
+        <div id="stat-carousel" class="stat-carousel"></div>
+
+        <div class="panel-card" style="margin-bottom:1rem">
+          <h2>All subscribers <span id="sub-count" style="color:var(--muted);font-weight:400"></span></h2>
+          <div class="table-wrap">
+            <table class="data">
+              <thead>
+                <tr>
+                  <th>Status</th>
+                  <th>Chat ID</th>
+                  <th>Username</th>
+                  <th>Phone</th>
+                  <th>Plan</th>
+                  <th>Expires</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="sub-rows"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="panel-card">
+          <h2>Recent payments</h2>
+          <div class="table-wrap">
+            <table class="data">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Phone</th>
+                  <th>Plan</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th>Receipt</th>
+                </tr>
+              </thead>
+              <tbody id="pay-rows"></tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div id="slide-backdrop" class="slide-panel-backdrop"></div>
+  <aside id="slide-panel" class="slide-panel">
+    <div class="slide-panel-header">
+      <strong id="panel-title">Subscriber</strong>
+      <button id="slide-close" class="btn ghost" type="button">Close</button>
+    </div>
+    <div id="panel-body" class="slide-panel-body"></div>
+    <div class="slide-panel-actions">
+      <button id="panel-disconnect" class="btn danger" type="button">Disconnect subscriber</button>
+    </div>
+  </aside>
+
+  <script src="/static/admin_shell.js"></script>
+  <script>
+    let subscribers = [];
+    let selected = null;
+
+    function fmtKes(n) {
+      return "KES " + Number(n || 0).toLocaleString(undefined, { maximumFractionDigits: 0 });
+    }
+
+    function fmtDate(iso) {
+      if (!iso) return "—";
+      try { return new Date(iso).toLocaleString(); } catch (_) { return iso; }
+    }
+
+    function statusClass(status) {
+      return "status-pill " + String(status || "").replace(/_/g, "-");
+    }
+
+    function canDisconnect(sub) {
+      return sub && ["active", "pending_payment", "awaiting_phone"].includes(sub.status);
+    }
+
+    function renderStats(stats) {
+      const slides = [
+        { label: "Active", value: stats.active_count, cls: "active" },
+        { label: "Total income", value: fmtKes(stats.total_income_kes), cls: "income" },
+        { label: "This month", value: fmtKes(stats.income_this_month_kes), cls: "income" },
+        { label: "Today", value: fmtKes(stats.income_today_kes), cls: "" },
+        { label: "Weekly / Monthly", value: `${stats.weekly_active} / ${stats.monthly_active}`, cls: "active" },
+        { label: "Expired · Pending", value: `${stats.expired_count} · ${stats.pending_count}`, cls: "" },
+        { label: "All subscribers", value: stats.total_subscribers, cls: "" },
+        { label: "Payments", value: stats.successful_payments, cls: "" },
+      ];
+      document.getElementById("stat-carousel").innerHTML = slides.map(function (s) {
+        return `<div class="stat-slide ${s.cls}"><div class="label">${s.label}</div><div class="value">${s.value}</div></div>`;
+      }).join("");
+      document.getElementById("status").textContent = "Updated " + fmtDate(stats.generated_at);
+    }
+
+    function renderSubscribers(list) {
+      subscribers = list || [];
+      document.getElementById("sub-count").textContent = `(${subscribers.length})`;
+      const tbody = document.getElementById("sub-rows");
+      if (!subscribers.length) {
+        tbody.innerHTML = '<tr><td colspan="7" style="color:var(--muted);text-align:center">No subscribers yet</td></tr>';
+        return;
+      }
+      tbody.innerHTML = subscribers.map(function (sub) {
+        const user = sub.telegram_username ? "@" + sub.telegram_username : "—";
+        const disconnectBtn = canDisconnect(sub)
+          ? `<button class="btn danger" data-disconnect="${sub.telegram_chat_id}" type="button">Disconnect</button>`
+          : "";
+        return `<tr data-chat="${sub.telegram_chat_id}">
+          <td><span class="${statusClass(sub.status)}">${sub.status.replace(/_/g, " ")}</span></td>
+          <td>${sub.telegram_chat_id}</td>
+          <td>${user}</td>
+          <td>${sub.phone || "—"}</td>
+          <td>${sub.plan || "—"}</td>
+          <td>${fmtDate(sub.expires_at)}</td>
+          <td>${disconnectBtn}</td>
+        </tr>`;
+      }).join("");
+
+      tbody.querySelectorAll("tr[data-chat]").forEach(function (row) {
+        row.addEventListener("click", function (ev) {
+          if (ev.target.closest("button")) return;
+          openPanel(row.dataset.chat);
+        });
+      });
+      tbody.querySelectorAll("[data-disconnect]").forEach(function (btn) {
+        btn.addEventListener("click", function (ev) {
+          ev.stopPropagation();
+          openPanel(btn.dataset.disconnect, true);
+        });
+      });
+    }
+
+    function renderPayments(payments) {
+      const tbody = document.getElementById("pay-rows");
+      if (!payments.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="color:var(--muted);text-align:center">No payments yet</td></tr>';
+        return;
+      }
+      tbody.innerHTML = payments.map(function (txn) {
+        const when = fmtDate(txn.completed_at || txn.created_at);
+        const st = txn.status || "";
+        const cls = st === "success" ? "active" : st === "failed" ? "cancelled" : "pending_payment";
+        return `<tr>
+          <td>${when}</td>
+          <td>${txn.phone || "—"}</td>
+          <td>${txn.plan || "—"}</td>
+          <td>${fmtKes(txn.amount)}</td>
+          <td><span class="status-pill ${cls}">${st}</span></td>
+          <td>${txn.mpesa_receipt || "—"}</td>
+        </tr>`;
+      }).join("");
+    }
+
+    function openPanel(chatId, focusAction) {
+      selected = subscribers.find(function (s) { return s.telegram_chat_id === chatId; });
+      if (!selected) return;
+      document.getElementById("panel-title").textContent = selected.telegram_username
+        ? "@" + selected.telegram_username
+        : "Chat " + selected.telegram_chat_id;
+      document.getElementById("panel-body").innerHTML = [
+        ["Chat ID", selected.telegram_chat_id],
+        ["Username", selected.telegram_username ? "@" + selected.telegram_username : "—"],
+        ["Phone", selected.phone || "—"],
+        ["Plan", selected.plan || "—"],
+        ["Status", selected.status.replace(/_/g, " ")],
+        ["Expires", fmtDate(selected.expires_at)],
+        ["Created", fmtDate(selected.created_at)],
+        ["Updated", fmtDate(selected.updated_at)],
+      ].map(function (row) {
+        return `<div class="detail-row"><span>${row[0]}</span><span>${row[1]}</span></div>`;
+      }).join("");
+      const btn = document.getElementById("panel-disconnect");
+      btn.disabled = !canDisconnect(selected);
+      btn.textContent = canDisconnect(selected) ? "Disconnect subscriber" : "Already disconnected";
+      window.MoneyLineShell.openSlidePanel();
+      if (focusAction) btn.focus();
+    }
+
+    async function disconnectSelected() {
+      if (!selected || !canDisconnect(selected)) return;
+      const name = selected.telegram_username ? "@" + selected.telegram_username : selected.telegram_chat_id;
+      if (!confirm(`Disconnect ${name}? They will stop receiving arb alerts immediately.`)) return;
+      try {
+        await window.MoneyLineShell.apiFetch(
+          `/api/subscribers/${encodeURIComponent(selected.telegram_chat_id)}/terminate`,
+          { method: "POST" }
+        );
+        window.MoneyLineShell.showToast("Subscriber disconnected", "ok");
+        window.MoneyLineShell.closeSlidePanel();
+        await loadData();
+      } catch (err) {
+        window.MoneyLineShell.showToast(err.message || "Disconnect failed", "err");
+      }
+    }
+
+    async function loadData() {
+      document.getElementById("status").textContent = "Loading…";
+      try {
+        const data = await window.MoneyLineShell.apiFetch("/api/subscribers");
+        renderStats(data.stats);
+        renderSubscribers(data.subscribers);
+        renderPayments(data.recent_payments || []);
+      } catch (err) {
+        document.getElementById("status").textContent = err.message || "Failed to load";
+        window.MoneyLineShell.showToast(err.message || "Failed to load subscribers", "err");
+      }
+    }
+
+    document.getElementById("refresh").addEventListener("click", loadData);
+    document.getElementById("panel-disconnect").addEventListener("click", disconnectSelected);
+    window.MoneyLineShell.initSidebar("subscribers");
+    window.MoneyLineSubscribers = { reload: loadData };
+    loadData();
+    setInterval(loadData, 60000);
+  </script>
+</body>
+</html>

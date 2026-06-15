@@ -1,0 +1,266 @@
+bookmakers:
+  betika:
+    name: Betika
+    base_url: https://api.betika.com
+    live_url: https://live.betika.com
+    status: live
+    market_workers: 50
+    provider: sportradar
+    headers:
+      Accept: application/json, text/plain, */*
+      Origin: https://www.betika.com
+      Referer: https://www.betika.com/
+      User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
+    endpoints:
+      sports: GET /v1/uo/sports
+      prematch_matches: GET /v1/uo/matches?page={page}&limit={limit}&sub_type_id=1&sport_id={sport_id}&sort_id=1&period_id=-1&esports=false
+      live_matches: GET /v1/uo/matches?page={page}&limit={limit}&sub_type_id=1&sport={sport_id}&sort=1
+      match_markets: GET /v1/uo/match?parent_match_id={parent_match_id}
+    sport_ids:
+      soccer: "14"
+      tennis: "28"
+      basketball: "30"
+      volleyball: "35"
+      handball: "33"
+      baseball: "31"
+      cricket: "37"
+      ice_hockey: "29"
+
+  odibets:
+    name: Odibets
+    base_url: https://apis.odibets.com
+    match_url: https://odibets.com
+    odi_api_url: https://api.odi.site/sportsbook/v1
+    status: live
+    market_workers: 50
+    provider: sportradar
+    headers:
+      Accept: application/json, text/plain, */*
+      Referer: https://odibets.com/
+      User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
+    endpoints:
+      prematch_matches: GET /v4/matches?src=2&sport_id={sport_slug}&tab=&country_id=&day={day}&sort_by=&competition_id=&trials=0&per_page={per_page}&page={page}
+      competitions: GET ?sport_id={sport_slug}&per_page=1000&sportsbook=sportsbook&resource=sport
+      competition_matches: GET ?sport_id={sport_slug}&competition_id={competition_id}&per_page=1000&sportsbook=sportsbook&resource=sport
+      sportevent: GET ?id={parent_match_id}&sportsbook=sportsbook&resource=sportevent
+      live_matches: GET /v5/matches?src=1&sport_id={sport_slug}&tab=&country_id=&day=&sub_type_id=&specifiers=&sort_by=&competition_id=&trials=0
+      match_markets: POST https://odibets.com/api/matche  # body: {id, sub_type_id}
+    sport_slugs:
+      soccer: soccer
+      tennis: tennis
+      basketball: basketball
+      volleyball: volleyball
+      handball: handball
+      baseball: baseball
+      cricket: cricket
+      ice_hockey: ice-hockey
+
+  sportpesa:
+    name: SportPesa
+    base_url: https://www.ke.sportpesa.com
+    status: live
+    market_workers: 20
+    provider: sportpesa
+    notes: Akamai bypass via curl_cffi chrome impersonation
+    headers:
+      Accept: application/json
+      X-Requested-With: XMLHttpRequest
+      User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
+    endpoints:
+      upcoming_games: GET /api/upcoming/games?sportId={sport_id}&section=upcoming&pag_count={limit}&pag_min=1
+      navigation: GET /api/navigation
+      league_games: GET /api/upcoming/games?sportId={sport_id}&leagueId={league_id}&section=league
+      game_markets: GET /api/games/markets?games={match_id}&markets=all
+    sport_ids:
+      soccer: "1"
+      tennis: "5"
+      basketball: "2"
+      volleyball: "23"
+      handball: "6"
+      baseball: "3"
+      cricket: "21"
+      ice_hockey: "4"
+
+  mozzartbet:
+    name: MozzartBet
+    base_url: https://www.mozzartbet.co.ke
+    status: live
+    market_workers: 30
+    provider: mozzart
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+      X-Requested-With: XMLHttpRequest
+      User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
+    endpoints:
+      all_games: GET /getAllGames
+      prematch_matches: POST /betOffer2
+      match_odds: POST /getBettingOdds
+      sports: GET /getSports
+    notes: |
+      Prematch flow: GET getAllGames (subgame IDs per sport) ->
+      POST betOffer2 {sportIds, type=betting, sort=bytime, offset pagination} ->
+      POST getBettingOdds {matchIds, subgames}. Some kodds entries may be null; skip them.
+    sport_ids:
+      soccer: "1"
+      tennis: "5"
+      basketball: "2"
+      volleyball: "6"
+      handball: "7"
+      baseball: "8"
+      cricket: "78"
+      ice_hockey: "4"
+
+  betpawa:
+    name: BetPawa
+    base_url: https://www.betpawa.co.ke/api/sportsbook
+    status: live
+    market_workers: 45
+    provider: sportradar
+    notes: Kenya site lists soccer, basketball, and tennis only
+    supported_sports:
+      - soccer
+      - basketball
+      - tennis
+    headers:
+      Accept: application/json
+      X-Pawa-Brand: betpawa-kenya
+      Origin: https://www.betpawa.co.ke
+      Referer: https://www.betpawa.co.ke/events
+      User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
+    endpoints:
+      events: GET /v3/events/lists/by-queries
+      event_detail: GET /v3/events/{event_id}
+    sport_ids:
+      soccer: "2"
+      basketball: "3"
+      tennis: "452"
+
+  sportybet:
+    name: SportyBet
+    base_url: https://www.sportybet.com/api/ke
+    status: live
+    market_workers: 50
+    provider: sportradar
+    notes: |
+      Mobile /ke/m/sport feed. Prematch list from commonThumbnailEvents
+      (productId=3, paginated). Markets fetched per event via /factsCenter/event.
+      Status 0 = prematch, 1 = live.
+    headers:
+      Accept: application/json
+      Referer: https://www.sportybet.com/ke/m/sport
+      User-Agent: Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15
+    endpoints:
+      events: GET /factsCenter/commonThumbnailEvents?sportId={sport_id}&productId=3
+      configurable_events: GET /factsCenter/configurableLiveOrPrematchEvents?sportId={sport_id}
+      markets: GET /factsCenter/event?productId=3&eventId={event_id}
+    sport_ids:
+      soccer: sr:sport:1
+      tennis: sr:sport:5
+      basketball: sr:sport:2
+      volleyball: sr:sport:23
+      handball: sr:sport:6
+      baseball: sr:sport:3
+      cricket: sr:sport:21
+      ice_hockey: sr:sport:4
+
+  bangbet:
+    name: BangBet
+    base_url: https://bet-api.bangbet.com/api/bet
+    status: live
+    market_workers: 50
+    provider: sportradar
+    headers:
+      Accept: application/json
+      Content-Type: application/json
+      User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
+    endpoints:
+      prematch_matches: POST /match/list
+      match_odds: POST /match/odds
+    sport_ids:
+      soccer: sr:sport:1
+      tennis: sr:sport:5
+      basketball: sr:sport:2
+      volleyball: sr:sport:23
+      handball: sr:sport:6
+      baseball: sr:sport:3
+      cricket: sr:sport:21
+      ice_hockey: sr:sport:4
+
+  pepeta:
+    name: Pepeta
+    base_url: https://api.pepeta.com
+    status: live
+    market_workers: 50
+    provider: sportradar
+    competition_listing: true
+    notes: Same Sportradar feed as Betika — shares parent_match_id. Tennis/volleyball/cricket not listed on Pepeta KE.
+    supported_sports:
+      - soccer
+      - basketball
+      - handball
+      - baseball
+      - ice_hockey
+    headers:
+      Accept: application/json, text/plain, */*
+      Origin: https://www.pepeta.com
+      Referer: https://www.pepeta.com/
+      User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
+    endpoints:
+      sports: GET /v1/uo/sports
+      prematch_matches: GET /v1/uo/matches?page={page}&limit={limit}&sub_type_id=1&sport_id={sport_id}&sort_id=1&period_id=-1&esports=false
+      match_markets: GET /v1/uo/match?parent_match_id={parent_match_id}
+    sport_ids:
+      soccer: "14"
+      tennis: "28"
+      basketball: "30"
+      volleyball: "35"
+      handball: "33"
+      baseball: "31"
+      cricket: "37"
+      ice_hockey: "29"
+
+  shabiki:
+    name: Shabiki
+    base_url: https://sports-apipro.logiqsport.com
+    status: live
+    market_workers: 30
+    provider: playlogiq
+    query_string: siteid=28&providerid=1&lang=en
+    headers:
+      Accept: application/json
+      User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
+    endpoints:
+      coupon: GET /api/Pregame/Coupon?type=upcoming&sportId={sport_id}&pagination=true
+    sport_ids:
+      soccer: "1"
+      tennis: "7"
+      basketball: "10"
+      volleyball: "26"
+      handball: "13"
+      baseball: "20"
+      cricket: "18"
+      ice_hockey: "2"
+
+  palmsbet:
+    name: PalmsBet
+    base_url: https://sb2frontend-altenar2.biahosted.com/api
+    status: live
+    market_workers: 45
+    provider: altenar
+    query_string: timezoneOffset=-180&langId=8&skinName=palmsbet&integration=palmsbet.co.ke
+    headers:
+      Accept: application/json
+      User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
+    endpoints:
+      events: GET /Sportsbook/GetEvents?sportids={sport_id}&champids=0&categoryids=0&count={limit}
+      event_detail: GET /Sportsbook/GetEventDetails?eventId={event_id}
+    sport_ids:
+      soccer: "66"
+      basketball: "67"
+      tennis: "68"
+      volleyball: "69"
+      handball: "70"
+      baseball: "71"
+      cricket: "72"
+      ice_hockey: "74"

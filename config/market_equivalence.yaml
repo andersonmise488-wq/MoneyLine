@@ -1,0 +1,48 @@
+# Cross-book market equivalence and blocking rules.
+# Used by canonical market matcher (production path).
+
+blocks:
+  # Never compare these period pairs for the same market_family
+  period_mismatch:
+    - [1st_half, full_time]
+    - [2nd_half, full_time]
+    - [1st_quarter, full_time]
+
+  # Market families that require explicit period in raw name (no default inference)
+  strict_period_names:
+    - btts
+    - half_totals
+    - match_result_1x2
+    - over_under_goals
+    - asian_handicap
+    - european_handicap
+    - draw_no_bet
+    - team_totals
+
+  # Combo / derivative markets — never cross-book arb
+  market_families:
+    - combo_1x2_ou
+    - combo_dc_ou
+    - combo_btts_1x2
+    - combo_ht_ft
+    - combo_any
+
+  # Raw name signals that always drop before resolution
+  drop_raw_patterns:
+    - combo
+    - interval
+    - corners_1x2
+
+line_rules:
+  # Integer lines often mean different push rules across books
+  reject_integer_totals: true
+  line_tolerance: 0.01
+
+settlement:
+  # Maps book-specific settlement flags to canonical
+  regular_time:
+    aliases: [regular time, 90 min, excl ot, excl extra time]
+  incl_ot:
+    aliases: [including overtime, incl ot, 2 way - ot]
+  push_void:
+    aliases: [asian, split stake]

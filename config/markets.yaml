@@ -1,0 +1,550 @@
+soccer:
+  asian_handicap:
+    display: Asian Handicap
+    outcomes:
+    - home
+    - away
+    betika_sub_type_ids:
+    - '16'
+    - '66'
+    - '88'
+    odibets_names:
+    - asian handicap
+    line_field: handicap
+  european_handicap:
+    display: European Handicap
+    outcomes:
+    - home
+    - draw
+    - away
+    betika_sub_type_ids:
+    - '14'
+    - '65'
+    - '87'
+    odibets_names:
+    - european handicap
+    - euro handicap
+    - handicap 1x2
+    line_field: handicap
+  over_under_goals:
+    display: Over/Under Goals
+    outcomes:
+    - over
+    - under
+    betika_sub_type_ids:
+    - '18'
+    odibets_names:
+    - total goals
+    - over/under
+    - total goals o/u
+    - over/under total goals
+    line_field: total
+  team_totals:
+    display: Team Totals
+    outcomes:
+    - over
+    - under
+    betika_sub_type_ids:
+    - '19'
+    odibets_names:
+    - team total
+    - home team total
+    - away team total
+    line_field: total
+  match_result_1x2:
+    display: 1X2
+    outcomes:
+    - home
+    - draw
+    - away
+    betika_sub_type_ids:
+    - '1'
+    - '1179'
+    - '1601'
+    - '60'
+    - '83'
+    odibets_names:
+    - 1x2
+    - 3 way
+    - match result
+    - final result
+  btts:
+    display: Both Teams To Score
+    outcomes:
+    - 'yes'
+    - 'no'
+    betika_sub_type_ids:
+    - '29'
+    - '75'
+    - '95'
+    odibets_names:
+    - both teams to score
+    - gg/ng
+    - both teams to score (gg/ng)
+  corners_totals:
+    display: Corners Totals
+    outcomes:
+    - over
+    - under
+    betika_sub_type_ids:
+    - '166'
+    - '167'
+    - '168'
+    - '177'
+    odibets_names:
+    - total corners
+    line_field: total
+  draw_no_bet:
+    display: Draw No Bet
+    outcomes:
+    - home
+    - away
+    betika_sub_type_ids:
+    - '11'
+    - '64'
+    - '86'
+    odibets_names:
+    - draw no bet
+    - dnb
+    - who will win
+    - money back
+  half_totals:
+    display: Half Totals
+    outcomes:
+    - over
+    - under
+    betika_sub_type_ids:
+    - '68'
+    - '91'
+    odibets_names:
+    - half total
+    - 1st half - total
+    - 2nd half - total
+    - 1st half total
+    - 2nd half total
+    default_period: 1st_half
+    line_field: total
+tennis:
+  match_winner:
+    display: Match Winner
+    outcomes:
+    - home
+    - away
+    betika_sub_type_ids:
+    - '186'
+    odibets_names:
+    - match winner
+    - winner
+  set_betting:
+    display: Set Betting
+    outcomes:
+    - score
+    betika_sub_type_ids:
+    - '202'
+    odibets_names:
+    - set betting
+    - correct score sets
+  game_handicap:
+    display: Game Handicap
+    outcomes:
+    - home
+    - away
+    betika_sub_type_ids:
+    - '187'
+    odibets_names:
+    - game handicap
+    line_field: handicap
+  total_games:
+    display: Total Games
+    outcomes:
+    - over
+    - under
+    betika_sub_type_ids:
+    - '189'
+    odibets_names:
+    - total games
+    line_field: total
+  correct_set_score:
+    display: Correct Set Score
+    outcomes:
+    - score
+    betika_sub_type_ids:
+    - '202'
+    odibets_names:
+    - correct set score
+basketball:
+  spread:
+    display: Spread
+    outcomes:
+    - home
+    - away
+    betika_sub_type_ids:
+    - '223'
+    - '237'
+    odibets_names:
+    - handicap
+    - spread
+    line_field: handicap
+  totals:
+    display: Totals
+    outcomes:
+    - over
+    - under
+    betika_sub_type_ids:
+    - '18'
+    - '225'
+    odibets_names:
+    - total points
+    - over/under
+    line_field: total
+  moneyline:
+    display: Moneyline
+    outcomes:
+    - home
+    - away
+    betika_sub_type_ids:
+    - '219'
+    odibets_names:
+    - winner
+    - moneyline
+  quarter_totals:
+    display: Quarter Totals
+    outcomes:
+    - over
+    - under
+    betika_sub_type_ids:
+    - '231'
+    - '236'
+    - '301'
+    - '756'
+    - '757'
+    - '960'
+    odibets_names:
+    - quarter total
+    default_period: 1st_quarter
+    line_field: total
+  half_totals:
+    display: Half Totals
+    outcomes:
+    - over
+    - under
+    betika_sub_type_ids:
+    - '228'
+    odibets_names:
+    - half total
+    default_period: 1st_half
+    line_field: total
+  team_totals:
+    display: Team Totals
+    outcomes:
+    - over
+    - under
+    betika_sub_type_ids:
+    - '227'
+    odibets_names:
+    - team total
+    - home team over/under
+    - away team over/under
+    - 1st half - home o/u
+    - 1st half - away o/u
+    - xth quarter - competitor1 total
+    - xth quarter - competitor2 total
+    line_field: total
+  draw_no_bet:
+    display: Draw No Bet
+    outcomes:
+    - home
+    - away
+    odibets_names:
+    - draw no bet
+    - dnb
+    - xth quarter - draw no bet
+volleyball:
+  match_winner:
+    display: Match Winner
+    outcomes:
+    - home
+    - away
+    betika_sub_type_ids:
+    - '186'
+    odibets_names:
+    - match winner
+  set_handicap:
+    display: Set Handicap
+    outcomes:
+    - home
+    - away
+    betika_sub_type_ids:
+    - '188'
+    odibets_names:
+    - set handicap
+    line_field: handicap
+  total_points:
+    display: Total Points
+    outcomes:
+    - over
+    - under
+    betika_sub_type_ids:
+    - '189'
+    odibets_names:
+    - total points
+    line_field: total
+  correct_set_score:
+    display: Correct Set Score
+    outcomes:
+    - score
+    betika_sub_type_ids:
+    - '202'
+    odibets_names:
+    - correct set score
+handball:
+  match_winner:
+    display: Match Winner
+    outcomes:
+    - home
+    - draw
+    - away
+    betika_sub_type_ids:
+    - '1'
+    odibets_names:
+    - 1x2
+    - match winner
+  asian_handicap:
+    display: Asian Handicap
+    outcomes:
+    - home
+    - away
+    betika_sub_type_ids:
+    - '16'
+    - '66'
+    odibets_names:
+    - handicap
+    line_field: handicap
+  european_handicap:
+    display: European Handicap
+    outcomes:
+    - home
+    - draw
+    - away
+    betika_sub_type_ids:
+    - '14'
+    odibets_names:
+    - european handicap
+    - euro handicap
+    line_field: handicap
+  totals:
+    display: Totals
+    outcomes:
+    - over
+    - under
+    betika_sub_type_ids:
+    - '18'
+    odibets_names:
+    - total goals
+    line_field: total
+  team_totals:
+    display: Team Totals
+    outcomes:
+    - over
+    - under
+    betika_sub_type_ids:
+    - '19'
+    odibets_names:
+    - team total
+    line_field: total
+baseball:
+  moneyline:
+    display: Moneyline
+    outcomes:
+    - home
+    - away
+    betika_sub_type_ids:
+    - '1123'
+    - '251'
+    odibets_names:
+    - winner
+    - moneyline
+  run_line:
+    display: Run Line
+    outcomes:
+    - home
+    - away
+    betika_sub_type_ids:
+    - '256'
+    - '275'
+    odibets_names:
+    - run line
+    - handicap
+    line_field: handicap
+  totals:
+    display: Totals
+    outcomes:
+    - over
+    - under
+    betika_sub_type_ids:
+    - '258'
+    odibets_names:
+    - total runs
+    line_field: total
+  first_5_innings:
+    display: First 5 Innings
+    outcomes:
+    - home
+    - draw
+    - away
+    betika_sub_type_ids:
+    - '274'
+    odibets_names:
+    - first 5 innings
+  first_5_innings_totals:
+    display: First 5 Innings Total
+    outcomes:
+    - over
+    - under
+    betika_sub_type_ids:
+    - '276'
+    odibets_names:
+    - innings 1 to 5 - total
+    - first 5 innings total
+    line_field: total
+  team_totals:
+    display: Team Totals
+    outcomes:
+    - over
+    - under
+    betika_sub_type_ids:
+    - '259'
+    odibets_names:
+    - team total
+    line_field: total
+cricket:
+  match_winner:
+    display: Match Winner
+    outcomes:
+    - home
+    - away
+    betika_sub_type_ids:
+    - '340'
+    odibets_names:
+    - match winner
+  over_under_runs:
+    display: Over/Under Runs
+    outcomes:
+    - over
+    - under
+    betika_sub_type_ids:
+    - '342'
+    odibets_names:
+    - total runs
+    line_field: total
+  session_betting:
+    display: Session Betting
+    outcomes:
+    - over
+    - under
+    betika_sub_type_ids:
+    - '350'
+    odibets_names:
+    - session runs
+    line_field: total
+  innings_totals:
+    display: Innings Totals
+    outcomes:
+    - over
+    - under
+    betika_sub_type_ids:
+    - '342'
+    odibets_names:
+    - innings total
+    line_field: total
+  top_batsman:
+    display: Top Batsman
+    outcomes:
+    - player
+    betika_sub_type_ids:
+    - '363'
+    odibets_names:
+    - top batsman
+ice_hockey:
+  match_result_1x2:
+    display: Match Result (3 Way)
+    outcomes:
+    - home
+    - draw
+    - away
+  moneyline:
+    display: Moneyline
+    outcomes:
+    - home
+    - away
+    betika_sub_type_ids:
+    - '406'
+    odibets_names:
+    - winner
+    - moneyline
+  european_handicap:
+    display: European Handicap
+    outcomes:
+    - home
+    - draw
+    - away
+    betika_sub_type_ids:
+    - '14'
+    odibets_names:
+    - european handicap
+    - euro handicap
+    line_field: handicap
+  puck_line:
+    display: Puck Line
+    outcomes:
+    - home
+    - away
+    betika_sub_type_ids:
+    - '14'
+    - '16'
+    - '410'
+    - '460'
+    odibets_names:
+    - puck line
+    - handicap
+    line_field: handicap
+  totals:
+    display: Totals
+    outcomes:
+    - over
+    - under
+    betika_sub_type_ids:
+    - '18'
+    - '412'
+    odibets_names:
+    - total goals
+    line_field: total
+  period_betting:
+    display: Period Betting
+    outcomes:
+    - home
+    - draw
+    - away
+    betika_sub_type_ids:
+    - '415'
+    - '432'
+    - '443'
+    - '446'
+    - '447'
+    - '448'
+    - '452'
+    - '459'
+    - '529'
+    odibets_names:
+    - period result
+    default_period: 1st_period
+  team_totals:
+    display: Team Totals
+    outcomes:
+    - over
+    - under
+    betika_sub_type_ids:
+    - '413'
+    odibets_names:
+    - team total
+    line_field: total

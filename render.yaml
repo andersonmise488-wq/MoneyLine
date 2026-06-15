@@ -1,0 +1,45 @@
+services:
+  - type: web
+    name: moneyline
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHONPATH
+        value: /app/src
+      - key: WEB_SCAN_MIN_MARGIN_PCT
+        value: "0.0"
+      - key: WEB_SCAN_MAX_EVENTS
+        value: "0"
+      - key: WEB_SCAN_MAX_MARKETS
+        value: "0"
+      - key: MATCH_FIRST_MARKETS
+        value: "true"
+      - key: MARKET_FETCH_CONCURRENCY
+        value: "50"
+      - key: RAW_CACHE_TTL_SECONDS
+        value: "0"
+      - key: ODDS_STALENESS_SECONDS
+        value: "0"
+      - key: ALERT_MIN_MARGIN_PCT
+        value: "5.0"
+      - key: SCAN_AUTO_ALERTS_ENABLED
+        value: "true"
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_CHAT_ID
+        sync: false
+      - key: TELEGRAM_ADMIN_CHAT_IDS
+        sync: false
+      - key: WEB_ADMIN_TOKEN
+        sync: false
+      - key: WEB_ALLOWED_ORIGINS
+        sync: false
+      - key: MPESA_CONSUMER_KEY
+        sync: false
+      - key: MPESA_CONSUMER_SECRET
+        sync: false
+      - key: MPESA_PASSKEY
+        sync: false
+      - key: MPESA_CALLBACK_URL
+        sync: false

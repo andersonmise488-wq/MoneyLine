@@ -1,0 +1,26 @@
+# Canonical sports supported by MoneyLine
+sports:
+  soccer:
+    display: Soccer / Football
+    aliases: [football, soccer]
+  tennis:
+    display: Tennis
+    aliases: [tennis]
+  basketball:
+    display: Basketball
+    aliases: [basketball]
+  volleyball:
+    display: Volleyball
+    aliases: [volleyball]
+  handball:
+    display: Handball
+    aliases: [handball]
+  baseball:
+    display: Baseball
+    aliases: [baseball]
+  cricket:
+    display: Cricket
+    aliases: [cricket]
+  ice_hockey:
+    display: Ice Hockey
+    aliases: [ice hockey, ice-hockey]

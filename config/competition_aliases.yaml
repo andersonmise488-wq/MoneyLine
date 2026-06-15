@@ -1,0 +1,28 @@
+# Canonical competition names for cross-book fuzzy matching.
+soccer:
+  premier league:
+    aliases: [england premier league, epl, barclays premier league]
+  "la liga":
+    aliases: [spain la liga, laliga, primera division]
+  "serie a":
+    aliases: [italy serie a, serie a tim]
+  bundesliga:
+    aliases: [germany bundesliga, 1 bundesliga]
+  "ligue 1":
+    aliases: [france ligue 1]
+  uefa champions league:
+    aliases: [champions league, ucl]
+  "kenya premier league":
+    aliases: [kpl, kenyan premier league, fkf premier league]
+  "caf champions league":
+    aliases: [africa champions league]
+
+tennis:
+  atp:
+    aliases: [atp tour, atp 250, atp 500, atp 1000]
+  wta:
+    aliases: [wta tour, wta 250, wta 500, wta 1000]
+
+basketball:
+  nba:
+    aliases: [usa nba, national basketball association]

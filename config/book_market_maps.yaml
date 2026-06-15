@@ -1,0 +1,399 @@
+notes: Auto-generated from scripts/generate_book_market_maps.py. Sport-scoped ID maps
+  take precedence over name matching.
+sportradar_sub_type_id:
+  betika:
+    soccer:
+      '1': match_result_1x2
+      '11': draw_no_bet
+      '14': european_handicap
+      '16': asian_handicap
+      '18': over_under_goals
+      '19': team_totals
+      '29': btts
+      '60': match_result_1x2
+      '64': draw_no_bet
+      '65': european_handicap
+      '66': asian_handicap
+      '68': half_totals
+      '75': btts
+      '83': match_result_1x2
+      '86': draw_no_bet
+      '88': asian_handicap
+      '91': half_totals
+      '95': btts
+      '166': corners_totals
+      '167': corners_totals
+      '168': corners_totals
+      '177': corners_totals
+      '1179': match_result_1x2
+      '1601': match_result_1x2
+    tennis:
+      '186': match_winner
+      '187': game_handicap
+    basketball:
+      '219': moneyline
+      '225': totals
+      '228': half_totals
+      '236': quarter_totals
+      '301': quarter_totals
+      '756': quarter_totals
+      '757': quarter_totals
+      '960': quarter_totals
+    volleyball:
+      '186': match_winner
+    handball:
+      '18': totals
+    baseball:
+      '251': moneyline
+      '256': run_line
+      '258': totals
+      '275': run_line
+      '276': first_5_innings_totals
+    cricket:
+      '340': match_winner
+    ice_hockey:
+      '18': totals
+      '14': puck_line
+      '406': moneyline
+      '432': period_betting
+      '447': period_betting
+      '448': period_betting
+  odibets:
+    soccer:
+      '1': match_result_1x2
+      '18': over_under_goals
+      '11': draw_no_bet
+      '14': european_handicap
+      '16': asian_handicap
+      '60': match_result_1x2
+      '64': draw_no_bet
+      '66': asian_handicap
+      '75': btts
+      '83': match_result_1x2
+      '86': draw_no_bet
+      '88': asian_handicap
+      '95': btts
+      '166': corners_totals
+      '177': corners_totals
+    basketball:
+      '219': moneyline
+      '18': totals
+      '225': totals
+      '223': spread
+      '228': half_totals
+    handball:
+      '18': totals
+      '16': asian_handicap
+      '66': asian_handicap
+    baseball:
+      '258': totals
+      '256': run_line
+      '251': moneyline
+    cricket:
+      '340': match_winner
+    ice_hockey:
+      '18': totals
+      '14': european_handicap
+      '16': puck_line
+      '406': moneyline
+      '432': period_betting
+      '443': period_betting
+      '446': period_betting
+      '452': period_betting
+      '459': period_betting
+      '460': puck_line
+      '529': period_betting
+  pepeta:
+    soccer:
+      '1': match_result_1x2
+      '18': over_under_goals
+      '1601': match_result_1x2
+      '60': match_result_1x2
+      '75': btts
+      '177': corners_totals
+      '166': corners_totals
+      '167': corners_totals
+      '168': corners_totals
+      '1179': match_result_1x2
+    basketball:
+      '225': totals
+    handball:
+      '18': totals
+    baseball:
+      '251': moneyline
+      '256': run_line
+      '258': totals
+      '275': run_line
+      '1123': moneyline
+    ice_hockey:
+      '18': totals
+      '14': puck_line
+      '406': moneyline
+      '410': puck_line
+      '432': period_betting
+      '447': period_betting
+      '448': period_betting
+betpawa_market_type_id:
+  soccer:
+    '3743': match_result_1x2
+    '4703': draw_no_bet
+  tennis:
+    '2043818': match_winner
+    '3532590': game_handicap
+    '4895': total_games
+    '4758': match_winner
+    '4666923': game_handicap
+    '4770': match_winner
+  basketball:
+    '4791': moneyline
+    '5009': totals
+    '3777': spread
+    '4958': totals
+    '3747': spread
+    '4697': half_totals
+    '4976': totals
+    '3756': spread
+    '4973': quarter_totals
+    '3753': spread
+    '4988': quarter_totals
+    '3762': spread
+    '4994': quarter_totals
+    '3768': spread
+    '4997': quarter_totals
+    '3771': spread
+name_aliases_suggested:
+  baseball:
+    moneyline:
+    - Innings 1 to 5 - winner
+    - Winner (incl. extra innings)
+    - xth inning - winner
+    run_line:
+    - Handicap (incl. extra innings)
+    - Innings 1 to 5 - handicap
+    totals:
+    - '{''langValues'': {''en'': ''Team 2 Total Runs''}, ''International'': ''Team
+      2 Total Runs (5.5)''}'
+    - '{''langValues'': {''en'': ''Total Runs''}, ''International'': ''Total Runs
+      (4.5)''}'
+    - '{''langValues'': {''en'': ''Total Runs''}, ''International'': ''Total Runs
+      (5.5)''}'
+    - '{''langValues'': {''en'': ''Total Runs''}, ''International'': ''Total Runs
+      (7.5)''}'
+    - '{''langValues'': {''en'': ''Total Runs''}, ''International'': ''Total Runs
+      (8.5)''}'
+    - '{''langValues'': {''en'': ''Total Runs''}, ''International'': ''Total Runs
+      (9.0)''}'
+  basketball:
+    half_totals:
+    - Total
+    moneyline:
+    - Winner (incl. overtime)
+    - '{''langValues'': {''en'': ''Match Winner''}, ''International'': ''Match Winner''}'
+    quarter_totals:
+    - 1st quarter - Hapoel Galil Elyon total
+    - 1st quarter - Ironi Kiryat ATA total
+    - 1st quarter - draw no bet
+    - 1st quarter - total
+    - 1st quarter - winning margin
+    - 2nd quarter - draw no bet
+    - 2nd quarter - total
+    - 2nd quarter - winning margin
+    - 3rd quarter - draw no bet
+    - 3rd quarter - total
+    - 3rd quarter - winning margin
+    - 4th quarter - draw no bet
+    - 4th quarter - total
+    - 4th quarter - winning margin
+    spread:
+    - 1st half - handicap
+    - 1st quarter - handicap
+    - 2nd half - handicap
+    - 2nd quarter - handicap
+    - 3rd quarter - handicap
+    - 4th quarter - handicap
+    - Handicap (incl. overtime)
+    - xth quarter - handicap
+    totals:
+    - Over/Under
+    - Over/Under (incl. overtime)
+    - Player total points
+  cricket:
+    match_winner:
+    - Winner (incl. super over)
+    - Winner(Incl. super over)
+    - '{''langValues'': {''en'': ''Match Winner (Including Super Over)''}, ''International'':
+      ''Match Winner''}'
+  handball:
+    asian_handicap:
+    - 1st half - handicap
+    - 1st half - handicap 2 way
+    - Asian Handicap
+    match_winner:
+    - '{''langValues'': {''en'': ''Match Result''}, ''International'': ''Match Result''}'
+    - '{''langValues'': {''en'': ''Match Winner''}, ''International'': ''Match Winner''}'
+    totals:
+    - Total
+  ice_hockey:
+    european_handicap:
+    - Handicap 0:1
+    - Handicap 0:2
+    - Handicap 1:0
+    - Handicap 2:0
+    - Handicap 3:0
+    moneyline:
+    - Winner (incl. OT and pen.)
+    - Winner (incl. overtime and penalties)
+    - '{''langValues'': {''en'': ''Match Winner (Including Overtime)''}, ''International'':
+      ''Match Winner (Including Overtime)''}'
+    period_betting:
+    - 1st period - 1st goal
+    - 1st period - 1x2
+    - 1st period - both teams to score
+    - 1st period - double chance
+    - 1st period - draw no bet
+    - 1st period - handicap
+    - 1st period - last team to score
+    - 1st period - total
+    - 2nd period - 1st goal
+    - 2nd period - 1x2
+    - 2nd period - both teams to score
+    - 2nd period - double chance
+    - 2nd period - draw no bet
+    - 2nd period - handicap
+    - 2nd period - last team to score
+    - 2nd period - total
+    - 3rd period - 1st goal
+    - 3rd period - 1x2
+    - 3rd period - both teams to score
+    - 3rd period - double chance
+    - 3rd period - draw no bet
+    - 3rd period - last team to score
+    - 3rd period - total
+    - Highest scoring period
+    - Xth period - 1X2
+    - Xth period - Xth goal
+    - Xth period - total
+    - '{''langValues'': {''en'': ''1st Period Result''}, ''International'': ''1st
+      Period Result''}'
+    - '{''langValues'': {''en'': ''2nd Period Result''}, ''International'': ''2nd
+      Period Result''}'
+    - '{''langValues'': {''en'': ''3rd Period Result''}, ''International'': ''3rd
+      Period Result''}'
+    puck_line:
+    - 3rd period - handicap
+    - Asian Handicap
+    - Handicap (incl. overtime and penalties)
+    - Handicap 2 (incl. OT and pen.)
+    - Handicap 2 way
+    - '{''langValues'': {''en'': ''Goals Handicap (Regular Time)''}, ''International'':
+      ''Goals Handicap (Regular Time) (0.5)''}'
+    totals:
+    - Total
+    - '{''langValues'': {''en'': ''Total Goals (Regular Time)''}, ''International'':
+      ''Total Goals (Regular Time) (4.5)''}'
+    - '{''langValues'': {''en'': ''Total Goals (Regular Time)''}, ''International'':
+      ''Total Goals (Regular Time) (5.5)''}'
+    - '{''langValues'': {''en'': ''Total Goals (Regular Time)''}, ''International'':
+      ''Total Goals (Regular Time) (6.5)''}'
+  soccer:
+    asian_handicap:
+    - Asian Handicap
+    - Handicap
+    btts:
+    - 1st half - both teams to score
+    - 2nd half - both teams to score
+    corners_totals:
+    - 1st Half - Away Total Corners
+    - 1st Half - Home Total Corners
+    - 1st Half - Total Corners
+    - 1st half - total corners
+    - Away Team Total Corners
+    - Home Team Total Corners
+    - SSC Napoli total corners
+    - Total corners
+    - Udinese Calcio total corners
+    draw_no_bet:
+    - 1st Half - Draw No Bet
+    - 1st half - draw no bet
+    - 2nd Half - Draw No Bet
+    - 2nd half - draw no bet
+    - Draw No Bet
+    - Draw no bet
+    european_handicap:
+    - 1st half - handicap 0:1
+    - 1st half - handicap 0:2
+    - 1st half - handicap 0:3
+    - 1st half - handicap 1:0
+    - 2nd half - handicap 0:1
+    - 2nd half - handicap 0:2
+    - 2nd half - handicap 0:3
+    - 2nd half - handicap 1:0
+    - Handicap 0:1
+    - Handicap 0:2
+    - Handicap 0:3
+    - Handicap 1:0
+    - Handicap 2:0
+    match_result_1x2:
+    - 1X2
+    - 1X2 - 1UP
+    - 1X2 - 2UP
+    - 1st Half - 1X2
+    - 1st half - 1x2
+    - 1x2
+    - 2nd Half - 1X2
+    - 2nd half - 1x2
+    - Match Result after X Minutes
+    - '{''langValues'': {''en'': ''1st Half Result''}, ''International'': ''1st Half
+      Result''}'
+    - '{''langValues'': {''en'': ''Match Result''}, ''International'': ''Match Result''}'
+    over_under_goals:
+    - 1st Half - Over/Under
+    - Over/Under
+    - Over/Under - Early Goals
+    - Total
+    - Total Goals from 1 to X min
+    - '{''langValues'': {''en'': ''1st Half Total Goals''}, ''International'': ''1st
+      Half Total Goals (0.5)''}'
+    - '{''langValues'': {''en'': ''1st Half Total Goals''}, ''International'': ''1st
+      Half Total Goals (1.5)''}'
+    - '{''langValues'': {''en'': ''Total Goals''}, ''International'': ''Total Goals
+      (1.5)''}'
+    - '{''langValues'': {''en'': ''Total Goals''}, ''International'': ''Total Goals
+      (2.0)''}'
+    - '{''langValues'': {''en'': ''Total Goals''}, ''International'': ''Total Goals
+      (2.5)''}'
+    - '{''langValues'': {''en'': ''Total Goals''}, ''International'': ''Total Goals
+      (3.5)''}'
+    team_totals:
+    - 2nd Half - Away Team Total
+    - 2nd Half - Home Team Total
+  tennis:
+    game_handicap:
+    - 1st set - game handicap
+    - Game Handicap
+    - Game handicap
+    - xth set - game handicap
+    match_winner:
+    - 1st set - winner
+    - 2nd set - winner
+    - Current Set Winner
+    - Winner
+    - '{''langValues'': {''en'': ''1st Set Winner''}, ''International'': ''1st Set
+      Winner''}'
+    - '{''langValues'': {''en'': ''Match Winner''}, ''International'': ''Match Winner''}'
+    total_games:
+    - 1st set - total games
+    - Ambarzumjan, Edison total games
+    - Competitor1 total games
+    - Competitor2 total games
+    - Duran, Tuncay total games
+    - Total Games
+    - xth set - total games
+  volleyball:
+    correct_set_score:
+    - Correct set score
+    match_winner:
+    - Winner
+    - '{''langValues'': {''en'': ''Match Winner''}, ''International'': ''Match Winner''}'
+    set_handicap:
+    - Set handicap
