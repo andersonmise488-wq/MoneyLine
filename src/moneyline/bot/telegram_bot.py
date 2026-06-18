@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import re
 
-from moneyline.alerts.telegram import TelegramAlertError, send_message
+from moneyline.alerts.telegram import TelegramAlertError, answer_callback_query, send_message
 from moneyline.config.settings import get_admin_chat_ids, get_settings
 from moneyline.payments.stanbic import StanbicError
 from moneyline.subscriptions.models import SubscriptionPlan
@@ -15,16 +15,29 @@ from moneyline.timezone import format_eat
 
 logger = logging.getLogger(__name__)
 
-PLAN_PATTERN = re.compile(
-    r"^/subscribe(?:@[\w_]+)?(?:\s+(weekly|monthly))?\s*$",
+SUBSCRIBE_PLAN_PATTERN = re.compile(
+    r"^/subscribe(?:@[\w_]+)?\s+(weekly|monthly)\b",
     re.I,
 )
+SUBSCRIBE_BARE_PATTERN = re.compile(r"^/subscribe(?:@[\w_]+)?\s*$", re.I)
 PLAN_CHOICE_PATTERN = re.compile(r"^(weekly|monthly)$", re.I)
 PHONE_PATTERN = re.compile(r"^[\d+\s-]{9,15}$")
 PAID_PATTERN = re.compile(
     r"^/(?:paid|activate)(?:@\w+)?\s+(\d+)(?:\s+(\S+))?$",
     re.I,
 )
+SUBSCRIBE_CALLBACK_PREFIX = "sub:"
+
+
+def parse_subscribe_plan(text: str) -> SubscriptionPlan | None:
+    match = SUBSCRIBE_PLAN_PATTERN.match(text.strip())
+    if not match:
+        return None
+    return SubscriptionPlan(match.group(1).lower())
+
+
+def is_bare_subscribe_command(text: str) -> bool:
+    return bool(SUBSCRIBE_BARE_PATTERN.match(text.strip()))
 
 
 class TelegramBot:
@@ -91,6 +104,10 @@ class TelegramBot:
         return chat_id in get_admin_chat_ids()
 
     async def _handle_update(self, update: dict) -> None:
+        if update.get("callback_query"):
+            await self._handle_callback_query(update["callback_query"])
+            return
+
         message = update.get("message") or {}
         text = (message.get("text") or "").strip()
         chat = message.get("chat") or {}
@@ -120,47 +137,19 @@ class TelegramBot:
                     chat_id_str,
                     "Subscription cancelled. You will not receive paid alerts.",
                 )
-            elif PLAN_PATTERN.match(text):
-                plan_name = PLAN_PATTERN.match(text).group(1)
-                if not plan_name:
-                    await self._reply(
-                        chat_id_str,
-                        (
-                            "Choose a plan:\n"
-                            "/subscribe weekly — KES "
-                            f"{self.settings.subscription_weekly_kes:,}\n"
-                            "/subscribe monthly — KES "
-                            f"{self.settings.subscription_monthly_kes:,}"
-                        ),
-                    )
-                    return
-                plan = SubscriptionPlan(plan_name.lower())
-                self.service.begin_subscription(
-                    telegram_chat_id=chat_id_str,
-                    telegram_username=username,
-                    plan=plan,
-                )
-                await self._reply(
+            elif is_bare_subscribe_command(text):
+                await self._reply_plan_picker(chat_id_str)
+            elif parse_subscribe_plan(text):
+                await self._select_plan(
                     chat_id_str,
-                    self._subscribe_prompt(plan),
+                    parse_subscribe_plan(text),
+                    username=username,
                 )
             elif PLAN_CHOICE_PATTERN.match(text):
-                sub = self.service.get_subscriber(chat_id_str)
-                if sub is None or sub.status != "awaiting_phone":
-                    await self._reply(
-                        chat_id_str,
-                        "Start with /subscribe weekly or /subscribe monthly.",
-                    )
-                    return
-                plan = SubscriptionPlan(text.lower())
-                self.service.begin_subscription(
-                    telegram_chat_id=chat_id_str,
-                    telegram_username=username,
-                    plan=plan,
-                )
-                await self._reply(
+                await self._select_plan(
                     chat_id_str,
-                    self._subscribe_prompt(plan),
+                    SubscriptionPlan(text.lower()),
+                    username=username,
                 )
             elif PHONE_PATTERN.match(text):
                 await self._handle_phone(chat_id_str, text, username=username)
@@ -169,6 +158,90 @@ class TelegramBot:
         except Exception as exc:
             logger.exception("Bot handler error: %s", exc)
             await self._reply(chat_id_str, f"Sorry, something went wrong: {exc}")
+
+    async def _handle_callback_query(self, callback: dict) -> None:
+        data = (callback.get("data") or "").strip()
+        if not data.startswith(SUBSCRIBE_CALLBACK_PREFIX):
+            return
+
+        plan_name = data[len(SUBSCRIBE_CALLBACK_PREFIX):].lower()
+        if plan_name not in {"weekly", "monthly"}:
+            return
+
+        message = callback.get("message") or {}
+        chat = message.get("chat") or {}
+        chat_id = chat.get("id")
+        if chat_id is None:
+            return
+
+        chat_id_str = str(chat_id)
+        from_user = callback.get("from") or {}
+        username = from_user.get("username")
+        callback_id = callback.get("id")
+
+        try:
+            await self._select_plan(
+                chat_id_str,
+                SubscriptionPlan(plan_name),
+                username=username,
+            )
+            if callback_id:
+                await answer_callback_query(
+                    str(callback_id),
+                    text=f"{plan_label(SubscriptionPlan(plan_name))} plan selected",
+                )
+        except Exception as exc:
+            logger.exception("Callback handler error: %s", exc)
+            if callback_id:
+                try:
+                    await answer_callback_query(str(callback_id), text="Something went wrong")
+                except TelegramAlertError:
+                    pass
+
+    async def _select_plan(
+        self,
+        chat_id: str,
+        plan: SubscriptionPlan,
+        *,
+        username: str | None = None,
+    ) -> None:
+        self.service.begin_subscription(
+            telegram_chat_id=chat_id,
+            telegram_username=username,
+            plan=plan,
+        )
+        await self._reply(chat_id, self._subscribe_prompt(plan))
+
+    def _plan_picker_markup(self) -> dict:
+        weekly_kes = f"{self.settings.subscription_weekly_kes:,}"
+        monthly_kes = f"{self.settings.subscription_monthly_kes:,}"
+        return {
+            "inline_keyboard": [
+                [
+                    {
+                        "text": f"Weekly — KES {weekly_kes}",
+                        "callback_data": f"{SUBSCRIBE_CALLBACK_PREFIX}weekly",
+                    },
+                    {
+                        "text": f"Monthly — KES {monthly_kes}",
+                        "callback_data": f"{SUBSCRIBE_CALLBACK_PREFIX}monthly",
+                    },
+                ],
+            ],
+        }
+
+    async def _reply_plan_picker(self, chat_id: str) -> None:
+        await send_message(
+            (
+                "<b>Choose your plan</b>\n\n"
+                "Tap a button below, or send:\n"
+                "/subscribe weekly\n"
+                "/subscribe monthly"
+            ),
+            chat_id=chat_id,
+            parse_mode="HTML",
+            reply_markup=self._plan_picker_markup(),
+        )
 
     async def _handle_paid(self, admin_chat_id: str, text: str) -> None:
         match = PAID_PATTERN.match(text)
@@ -328,8 +401,13 @@ class TelegramBot:
             ),
         )
 
-    async def _reply(self, chat_id: str, text: str) -> None:
-        await send_message(text, chat_id=chat_id, parse_mode="HTML")
+    async def _reply(self, chat_id: str, text: str, reply_markup: dict | None = None) -> None:
+        await send_message(
+            text,
+            chat_id=chat_id,
+            parse_mode="HTML",
+            reply_markup=reply_markup,
+        )
 
     def _welcome(self) -> str:
         settings = get_settings()

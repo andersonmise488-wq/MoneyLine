@@ -324,6 +324,7 @@ async def send_message(
     chat_ids: list[str] | None = None,
     token: str | None = None,
     parse_mode: str = "HTML",
+    reply_markup: dict | None = None,
 ) -> int:
     settings = get_settings()
     token = (token or settings.telegram_bot_token).strip()
@@ -339,7 +340,9 @@ async def send_message(
 
     async with httpx.AsyncClient(timeout=20.0) as client:
         for target in targets:
-            payload = {"chat_id": target, "text": text, "parse_mode": parse_mode}
+            payload: dict = {"chat_id": target, "text": text, "parse_mode": parse_mode}
+            if reply_markup is not None:
+                payload["reply_markup"] = reply_markup
             resp = await client.post(url, json=payload)
             data = resp.json()
             if resp.status_code != 200 or not data.get("ok"):
@@ -351,6 +354,30 @@ async def send_message(
             sent += 1
 
     return sent
+
+
+async def answer_callback_query(
+    callback_query_id: str,
+    *,
+    text: str | None = None,
+    token: str | None = None,
+) -> None:
+    settings = get_settings()
+    token = (token or settings.telegram_bot_token).strip()
+    if not token:
+        raise TelegramAlertError("TELEGRAM_BOT_TOKEN is not set")
+
+    payload: dict = {"callback_query_id": callback_query_id}
+    if text:
+        payload["text"] = text
+
+    url = _api_url("answerCallbackQuery", token)
+    async with httpx.AsyncClient(timeout=20.0) as client:
+        resp = await client.post(url, json=payload)
+        data = resp.json()
+        if resp.status_code != 200 or not data.get("ok"):
+            description = data.get("description", resp.text)
+            raise TelegramAlertError(f"Telegram callback answer failed: {description}")
 
 
 def resolve_alert_targets(
