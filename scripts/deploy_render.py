@@ -68,6 +68,9 @@ def _static_env() -> list[dict]:
         {"key": "MARKET_FETCH_CONCURRENCY", "value": "50"},
         {"key": "RAW_CACHE_TTL_SECONDS", "value": "0"},
         {"key": "ODDS_STALENESS_SECONDS", "value": "0"},
+        {"key": "WEB_SCAN_INTERVAL_MINUTES", "value": "20"},
+        {"key": "WEB_SCAN_POLL_SECONDS", "value": "60"},
+        {"key": "ALERT_DEDUP_MINUTES", "value": "20"},
         {"key": "ALERT_MIN_MARGIN_PCT", "value": "5.0"},
         {"key": "SCAN_AUTO_ALERTS_ENABLED", "value": "true"},
     ]
@@ -129,7 +132,9 @@ def _create_service(env_vars: list[dict]) -> dict:
 
 def _update_env(service_id: str, env_vars: list[dict]) -> None:
     for item in env_vars:
-        _request("POST", f"/services/{service_id}/env-vars", item)
+        key = item["key"]
+        value = item["value"]
+        _request("PUT", f"/services/{service_id}/env-vars/{key}", {"value": value})
 
 
 def _trigger_deploy(service_id: str) -> dict:
