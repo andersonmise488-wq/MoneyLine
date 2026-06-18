@@ -29,17 +29,37 @@ def _pick(data: dict[str, Any], *keys: str) -> Any:
     return None
 
 
+def _is_success_status(data: dict[str, Any]) -> bool:
+    status = str(_pick(data, "status", "Status") or "").strip().lower()
+    return status in {"success", "ok", "completed", "accepted"}
+
+
 def normalize_stk_response(data: dict[str, Any]) -> dict[str, Any]:
     """Map Stanbic / M-Pesa STK initiate responses to a common shape."""
     nested = data.get("data") if isinstance(data.get("data"), dict) else {}
-    checkout = _pick(data, "CheckoutRequestID", "checkoutRequestId", "checkout_request_id")
+    checkout = _pick(
+        data,
+        "CheckoutRequestID",
+        "checkoutRequestId",
+        "checkout_request_id",
+        "dbsReferenceId",
+        "dbs_reference_id",
+    )
     if checkout is None and nested:
-        checkout = _pick(nested, "CheckoutRequestID", "checkoutRequestId", "checkout_request_id")
+        checkout = _pick(
+            nested,
+            "CheckoutRequestID",
+            "checkoutRequestId",
+            "checkout_request_id",
+            "dbsReferenceId",
+            "dbs_reference_id",
+        )
     merchant = _pick(data, "MerchantRequestID", "merchantRequestId", "merchant_request_id")
     if merchant is None and nested:
         merchant = _pick(nested, "MerchantRequestID", "merchantRequestId", "merchant_request_id")
     description = _pick(
         data,
+        "responseMessage",
         "ResponseDescription",
         "responseDescription",
         "CustomerMessage",
@@ -49,6 +69,7 @@ def normalize_stk_response(data: dict[str, Any]) -> dict[str, Any]:
     if description is None and nested:
         description = _pick(
             nested,
+            "responseMessage",
             "ResponseDescription",
             "responseDescription",
             "CustomerMessage",
@@ -56,11 +77,19 @@ def normalize_stk_response(data: dict[str, Any]) -> dict[str, Any]:
             "message",
         )
     if not checkout:
-        raise StanbicError(data.get("errorMessage") or data.get("message") or str(data))
+        if _is_success_status(data):
+            raise StanbicError(
+                "STK push accepted by Stanbic but no transaction reference was returned. "
+                "Check your phone for the M-Pesa prompt."
+            )
+        raise StanbicError(
+            _pick(data, "errorMessage", "message", "responseMessage") or str(data)
+        )
     return {
         "CheckoutRequestID": str(checkout),
-        "MerchantRequestID": str(merchant or ""),
+        "MerchantRequestID": str(merchant or checkout),
         "ResponseDescription": str(description or "STK push accepted"),
+        "dbsReferenceId": str(_pick(data, "dbsReferenceId") or checkout),
     }
 
 
@@ -97,12 +126,23 @@ def parse_stk_callback(payload: dict[str, Any]) -> dict[str, Any]:
             "checkout_request_id",
             "CheckoutRequestID",
             "checkoutRequestId",
+            "dbsReferenceId",
+            "dbs_reference_id",
         )
         or ""
     )
     result_code_raw = _pick(payload, "result_code", "ResultCode")
+    if result_code_raw is None:
+        status = str(_pick(payload, "status", "Status") or "").strip().lower()
+        if status in {"success", "completed", "ok"}:
+            result_code_raw = 0
+        elif status in {"failed", "error", "cancelled"}:
+            result_code_raw = 1
     result_code = int(result_code_raw if result_code_raw is not None else -1)
-    result_desc = str(_pick(payload, "result_desc", "ResultDesc", "failure_reason") or "")
+    result_desc = str(
+        _pick(payload, "result_desc", "ResultDesc", "failure_reason", "responseMessage")
+        or ""
+    )
     mpesa_receipt = _pick(
         payload,
         "mpesa_receipt_number",

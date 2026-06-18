@@ -115,7 +115,7 @@ class SubscriptionService:
             plan=plan,
         )
 
-        reference = f"ML-{plan.value[:3].upper()}-{telegram_chat_id}"
+        reference = f"ML{plan.value[:3].upper()}{telegram_chat_id.replace('-', '')}"
         response = await self.stanbic.stk_push(
             phone=phone,
             amount=amount,

@@ -3,6 +3,31 @@
 from moneyline.payments.stanbic import normalize_stk_response, parse_stk_callback
 
 
+def test_normalize_stk_response_stanbic_success_shape() -> None:
+    data = {
+        "dbsReferenceId": "MLMON1003860766281",
+        "status": "Success",
+        "responseMessage": "Request processed successfully",
+    }
+    out = normalize_stk_response(data)
+    assert out["CheckoutRequestID"] == "MLMON1003860766281"
+    assert out["ResponseDescription"] == "Request processed successfully"
+
+
+def test_parse_stk_callback_stanbic_status_success() -> None:
+    parsed = parse_stk_callback(
+        {
+            "dbsReferenceId": "MLMON1003860766281",
+            "status": "Success",
+            "responseMessage": "Payment completed",
+            "mpesa_receipt_number": "ABC123",
+        }
+    )
+    assert parsed["checkout_request_id"] == "MLMON1003860766281"
+    assert parsed["result_code"] == 0
+    assert parsed["mpesa_receipt"] == "ABC123"
+
+
 def test_normalize_stk_response_nested() -> None:
     data = {
         "data": {

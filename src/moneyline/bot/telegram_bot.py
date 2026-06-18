@@ -235,8 +235,11 @@ class TelegramBot:
                 phone_raw=phone,
                 plan=plan,
             )
-        except (StanbicError, ValueError) as exc:
+        except StanbicError as exc:
             await self._reply(chat_id, f"Payment setup failed: {exc}")
+            return
+        except ValueError as exc:
+            await self._reply(chat_id, str(exc))
             return
 
         if result.get("demo") or result.get("auto"):
