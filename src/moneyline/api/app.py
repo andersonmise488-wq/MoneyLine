@@ -317,10 +317,10 @@ async def ws_scan_public(websocket: WebSocket) -> None:
         await hub.disconnect_public(websocket)
 
 
-@app.post("/mpesa/callback")
-async def mpesa_callback(request: Request) -> JSONResponse:
+@app.post("/stanbic/callback")
+async def stanbic_callback(request: Request) -> JSONResponse:
     payload = await request.json()
-    logger.info("M-Pesa callback received")
+    logger.info("Stanbic payment callback received")
 
     await _service.notify_expired_subscribers()
     subscriber = await _service.handle_stk_callback(payload)

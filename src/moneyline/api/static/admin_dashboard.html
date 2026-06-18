@@ -106,8 +106,11 @@
     const wsUrl = `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws/scan`;
     const FREE_MAX = 3;
     let ws, pingTimer, lastData = null;
+    const arbMap = new Map();
 
     window.MoneyLineShell.initSidebar("arbs");
+
+    function rowId(id) { return `arb-${id}`; }
 
     function bankroll() {
       return Math.max(0, Number(document.getElementById("bankroll").value) || 0);
@@ -117,47 +120,66 @@
       return document.getElementById("sport-filter").value;
     }
 
-    function renderTable() {
-      if (!lastData) return;
-      const tbody = document.getElementById("rows");
-      let opps = lastData.opportunities || [];
-      const filter = sportFilter();
-      if (filter) opps = opps.filter(o => String(o.sport || "").toLowerCase() === filter);
+    function buildRowHtml(o) {
+      const isPremium = o.margin_pct > FREE_MAX;
       const br = bankroll();
-      tbody.innerHTML = "";
-      if (!opps.length && !lastData.scanning) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:1.5rem;color:var(--muted)">No active arbs</td></tr>';
+      const profit = calcProfit(o.legs, br);
+      return `<td class="margin">${Number(o.margin_pct).toFixed(2)}%${isPremium ? '<br><span class="premium-tag">premium</span>' : ""}</td>
+        <td>${fmtSportLabel(o.sport)}</td>
+        <td>${o.home_team} vs ${o.away_team}</td>
+        <td>${o.market_display || o.market_key}</td>
+        <td><div class="legs">${fmtLegsWithStakes(o.legs, br, o)}</div>
+        ${profit ? `<div class="profit">+${fmtKes(profit.profit)} profit</div>` : ""}</td>`;
+    }
+
+    function upsertRow(o) {
+      const filter = sportFilter();
+      if (filter && String(o.sport || "").toLowerCase() !== filter) {
+        removeRows([o.opportunity_id]);
         return;
       }
-      opps.forEach(o => {
-        const isPremium = o.margin_pct > FREE_MAX;
-        const profit = calcProfit(o.legs, br);
-        const tr = document.createElement("tr");
-        tr.innerHTML = `<td class="margin">${Number(o.margin_pct).toFixed(2)}%${isPremium ? '<br><span class="premium-tag">premium</span>' : ""}</td>
-          <td>${fmtSportLabel(o.sport)}</td>
-          <td>${o.home_team} vs ${o.away_team}</td>
-          <td>${o.market_display || o.market_key}</td>
-          <td><div class="legs">${fmtLegsWithStakes(o.legs, br, o)}</div>
-          ${profit ? `<div class="profit">+${fmtKes(profit.profit)} profit</div>` : ""}</td>`;
+      const tbody = document.getElementById("rows");
+      const id = rowId(o.opportunity_id);
+      let tr = document.getElementById(id);
+      if (!tr) {
+        tr = document.createElement("tr");
+        tr.id = id;
         tbody.appendChild(tr);
+      }
+      tr.innerHTML = buildRowHtml(o);
+      const empty = document.getElementById("rows-empty");
+      if (empty) empty.remove();
+    }
+
+    function removeRows(ids) {
+      ids.forEach(id => {
+        const tr = document.getElementById(rowId(id));
+        if (tr) tr.remove();
+        arbMap.delete(id);
       });
     }
 
-    function render(data) {
-      if (data.type === "scan_start") {
-        document.getElementById("conn").textContent = "Scanning";
-        document.getElementById("conn").className = "badge scan";
-        document.getElementById("status").textContent = "Scan in progress…";
-        return;
-      }
-      if (data.type === "scan_error") {
-        document.getElementById("status").textContent = `Error: ${data.error || "scan failed"}`;
-        return;
-      }
-      if (data.type && data.type !== "scan_snapshot") return;
+    function showEmptyIfNeeded() {
+      const tbody = document.getElementById("rows");
+      if (tbody.children.length || lastData?.scanning) return;
+      tbody.innerHTML = '<tr id="rows-empty"><td colspan="5" style="text-align:center;padding:1.5rem;color:var(--muted)">No active arbs</td></tr>';
+    }
 
-      lastData = data;
-      document.getElementById("total").textContent = data.total ?? 0;
+    function renderTableFromMap() {
+      const tbody = document.getElementById("rows");
+      tbody.innerHTML = "";
+      let opps = Array.from(arbMap.values());
+      const filter = sportFilter();
+      if (filter) opps = opps.filter(o => String(o.sport || "").toLowerCase() === filter);
+      if (!opps.length && !lastData?.scanning) {
+        showEmptyIfNeeded();
+        return;
+      }
+      opps.forEach(o => upsertRow(o));
+    }
+
+    function renderMeta(data) {
+      document.getElementById("total").textContent = data.total ?? arbMap.size;
       document.getElementById("free").textContent = data.free_count ?? "—";
       document.getElementById("premium").textContent = data.premium_count ?? "—";
       const d = data.diagnostics || {};
@@ -189,13 +211,51 @@
         conn.textContent = "Live";
         conn.className = "badge ok";
         const sportCount = (d.supported_sports || []).length || d.sports_scanned || 8;
-        document.getElementById("status").textContent = `${data.total ?? 0} arbs · ${sportCount} sports · no premium cap`;
+        document.getElementById("status").textContent = `${data.total ?? arbMap.size} arbs · ${sportCount} sports · no premium cap`;
       }
-      renderTable();
     }
 
-    document.getElementById("bankroll").addEventListener("input", renderTable);
-    document.getElementById("sport-filter").addEventListener("change", renderTable);
+    function applyFullSnapshot(data) {
+      arbMap.clear();
+      (data.opportunities || []).forEach(o => arbMap.set(o.opportunity_id, o));
+      lastData = data;
+      renderMeta(data);
+      renderTableFromMap();
+    }
+
+    function applyDelta(data) {
+      (data.removed || []).forEach(id => arbMap.delete(id));
+      (data.added || []).forEach(o => arbMap.set(o.opportunity_id, o));
+      (data.updated || []).forEach(o => arbMap.set(o.opportunity_id, o));
+      lastData = { ...lastData, ...data, opportunities: Array.from(arbMap.values()) };
+      renderMeta(data);
+      removeRows(data.removed || []);
+      [...(data.added || []), ...(data.updated || [])].forEach(o => upsertRow(o));
+      showEmptyIfNeeded();
+    }
+
+    function render(data) {
+      if (data.type === "scan_start") {
+        document.getElementById("conn").textContent = "Scanning";
+        document.getElementById("conn").className = "badge scan";
+        document.getElementById("status").textContent = "Scan in progress…";
+        return;
+      }
+      if (data.type === "scan_error") {
+        document.getElementById("status").textContent = `Error: ${data.error || "scan failed"}`;
+        return;
+      }
+      if (data.type === "arb_delta") {
+        applyDelta(data);
+        return;
+      }
+      if (data.type === "scan_snapshot") {
+        applyFullSnapshot(data);
+      }
+    }
+
+    document.getElementById("bankroll").addEventListener("input", renderTableFromMap);
+    document.getElementById("sport-filter").addEventListener("change", renderTableFromMap);
     document.getElementById("refresh").onclick = () => {
       if (ws?.readyState === WebSocket.OPEN) {
         const token = window.MoneyLineShell.getToken();

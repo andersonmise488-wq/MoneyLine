@@ -76,46 +76,102 @@
   <script>
     const wsUrl = `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws/public`;
     let ws, pingTimer, lastData = null;
+    const arbMap = new Map();
+
+    function rowId(id) { return `arb-${id}`; }
 
     function bankroll() {
       return Math.max(0, Number(document.getElementById("bankroll").value) || 0);
     }
 
-    function renderRows() {
-      if (!lastData) return;
-      const tbody = document.getElementById("rows");
-      const opps = lastData.opportunities || [];
+    function buildRowHtml(o) {
       const br = bankroll();
+      const profit = calcProfit(o.legs, br);
+      return `<td class="margin">${Number(o.margin_pct).toFixed(2)}%</td>
+        <td>${o.match}<br><span class="muted">${o.sport}</span></td>
+        <td>${o.market || "—"}</td>
+        <td><div class="legs">${fmtLegsWithStakes(o.legs, br, o)}</div>
+        ${profit ? `<div class="profit">Profit ${fmtKes(profit.profit)} · return ${fmtKes(profit.guaranteedReturn)}</div>` : ""}</td>`;
+    }
+
+    function upsertRow(o) {
+      const tbody = document.getElementById("rows");
+      const id = rowId(o.opportunity_id);
+      let tr = document.getElementById(id);
+      if (!tr) {
+        tr = document.createElement("tr");
+        tr.id = id;
+        tbody.appendChild(tr);
+      }
+      tr.innerHTML = buildRowHtml(o);
+      const empty = document.getElementById("rows-empty");
+      if (empty) empty.remove();
+    }
+
+    function removeRows(ids) {
+      ids.forEach(id => {
+        const tr = document.getElementById(rowId(id));
+        if (tr) tr.remove();
+        arbMap.delete(id);
+      });
+    }
+
+    function showEmptyIfNeeded() {
+      const tbody = document.getElementById("rows");
+      if (tbody.children.length) return;
+      const prem = lastData?.premium_count || 0;
+      const maxPct = lastData?.public_max_margin_pct || 3;
+      const msg = prem > 0
+        ? `No free arbs (≤${maxPct}%) right now. ${prem} premium arbs available to subscribers.`
+        : "No free-band arbs right now.";
+      tbody.innerHTML = `<tr id="rows-empty"><td colspan="4" class="muted" style="text-align:center;padding:1.5rem">${msg}</td></tr>`;
+    }
+
+    function renderRowsFromMap() {
+      const tbody = document.getElementById("rows");
       tbody.innerHTML = "";
+      const opps = Array.from(arbMap.values());
       if (!opps.length) {
-        const prem = lastData.premium_count || 0;
-        const msg = prem > 0
-          ? `No free arbs (≤${lastData.public_max_margin_pct || 3}%) right now. ${prem} premium arbs available to subscribers.`
-          : "No free-band arbs right now.";
-        tbody.innerHTML = `<tr><td colspan="4" class="muted" style="text-align:center;padding:1.5rem">${msg}</td></tr>`;
+        showEmptyIfNeeded();
         return;
       }
-      opps.forEach(o => {
-        const profit = calcProfit(o.legs, br);
-        const tr = document.createElement("tr");
-        tr.innerHTML = `<td class="margin">${Number(o.margin_pct).toFixed(2)}%</td>
-          <td>${o.match}<br><span class="muted">${o.sport}</span></td>
-          <td>${o.market || "—"}</td>
-          <td><div class="legs">${fmtLegsWithStakes(o.legs, br, o)}</div>
-          ${profit ? `<div class="profit">Profit ${fmtKes(profit.profit)} · return ${fmtKes(profit.guaranteedReturn)}</div>` : ""}</td>`;
-        tbody.appendChild(tr);
-      });
+      opps.forEach(o => upsertRow(o));
     }
 
     function renderSummary() {
       if (!lastData) return;
-      const free = lastData.total ?? 0;
+      const free = lastData.total ?? arbMap.size;
       const prem = lastData.premium_count ?? 0;
       document.getElementById("summary").innerHTML =
         `<strong>${free}</strong> free arbs (≤${lastData.public_max_margin_pct || 3}%)` +
         (prem ? ` · <span class="muted">${prem} premium (subscribe)</span>` : "");
       document.getElementById("premium-cta").textContent =
         prem ? `${prem} premium arbs waiting` : "Subscribe for premium arbs";
+    }
+
+    function applyFullSnapshot(data) {
+      arbMap.clear();
+      (data.opportunities || []).forEach(o => arbMap.set(o.opportunity_id, o));
+      lastData = data;
+      document.getElementById("conn").textContent = "Live";
+      document.getElementById("conn").className = "badge live";
+      document.getElementById("status").textContent = data.scanning ? "Updating…" : "Connected";
+      renderSummary();
+      renderRowsFromMap();
+    }
+
+    function applyDelta(data) {
+      (data.removed || []).forEach(id => arbMap.delete(id));
+      (data.added || []).forEach(o => arbMap.set(o.opportunity_id, o));
+      (data.updated || []).forEach(o => arbMap.set(o.opportunity_id, o));
+      lastData = { ...lastData, ...data };
+      document.getElementById("conn").textContent = "Live";
+      document.getElementById("conn").className = "badge live";
+      document.getElementById("status").textContent = data.scanning ? "Updating…" : "Connected";
+      renderSummary();
+      removeRows(data.removed || []);
+      [...(data.added || []), ...(data.updated || [])].forEach(o => upsertRow(o));
+      showEmptyIfNeeded();
     }
 
     function render(data) {
@@ -125,16 +181,16 @@
         document.getElementById("status").textContent = "Scan in progress";
         return;
       }
-      if (data.type !== "public_snapshot") return;
-      document.getElementById("conn").textContent = "Live";
-      document.getElementById("conn").className = "badge live";
-      document.getElementById("status").textContent = data.scanning ? "Updating…" : "Connected";
-      lastData = data;
-      renderSummary();
-      renderRows();
+      if (data.type === "arb_delta") {
+        applyDelta(data);
+        return;
+      }
+      if (data.type === "public_snapshot") {
+        applyFullSnapshot(data);
+      }
     }
 
-    document.getElementById("bankroll").addEventListener("input", renderRows);
+    document.getElementById("bankroll").addEventListener("input", renderRowsFromMap);
 
     function connect() {
       ws = new WebSocket(wsUrl);

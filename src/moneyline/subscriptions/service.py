@@ -4,7 +4,7 @@ import logging
 from datetime import datetime, timezone
 
 from moneyline.config.settings import get_settings
-from moneyline.payments.mpesa import MpesaClient, MpesaError
+from moneyline.payments.stanbic import StanbicClient, StanbicError, parse_stk_callback
 from moneyline.storage.subscriptions import SubscriptionRepository
 from moneyline.subscriptions.dashboard import write_dashboard_file
 from moneyline.subscriptions.models import SubscriberRecord, SubscriptionPlan
@@ -19,10 +19,10 @@ class SubscriptionService:
     def __init__(
         self,
         repo: SubscriptionRepository | None = None,
-        mpesa: MpesaClient | None = None,
+        stanbic: StanbicClient | None = None,
     ) -> None:
         self.repo = repo or SubscriptionRepository()
-        self.mpesa = mpesa or MpesaClient()
+        self.stanbic = stanbic or StanbicClient()
         self.repo.ensure_schema()
 
     def get_subscriber(self, telegram_chat_id: str) -> SubscriberRecord | None:
@@ -103,9 +103,10 @@ class SubscriptionService:
                 plan=plan,
             )
 
-        if not settings.uses_daraja_stk():
-            raise MpesaError(
-                "M-Pesa is not configured. Set MPESA_PAYMENT_MODE=manual or complete Daraja setup."
+        if not settings.uses_stanbic_stk():
+            raise StanbicError(
+                "Stanbic payments are not configured. Set STANBIC_PAYMENT_MODE=manual "
+                "or complete Stanbic Connect setup."
             )
 
         self.repo.set_pending_payment(
@@ -114,11 +115,11 @@ class SubscriptionService:
             plan=plan,
         )
 
-        response = await self.mpesa.stk_push(
+        reference = f"ML-{plan.value[:3].upper()}-{telegram_chat_id}"
+        response = await self.stanbic.stk_push(
             phone=phone,
             amount=amount,
-            account_reference=f"ML-{plan.value[:3].upper()}",
-            transaction_desc=f"MoneyLine {plan_label(plan)}",
+            account_reference=reference,
         )
 
         checkout_request_id = str(response["CheckoutRequestID"])
@@ -140,7 +141,7 @@ class SubscriptionService:
         phone: str,
         plan: SubscriptionPlan,
     ) -> dict:
-        """Queue till STK push — no Daraja API call."""
+        """Queue manual payment confirmation — no Stanbic API call."""
         amount = plan_amount(plan)
         checkout_request_id = (
             f"MANUAL-{telegram_chat_id}-{int(datetime.now(timezone.utc).timestamp())}"
@@ -212,7 +213,7 @@ class SubscriptionService:
         phone: str,
         plan: SubscriptionPlan,
     ) -> dict:
-        """Simulate a successful payment while Daraja go-live is pending."""
+        """Simulate a successful payment while Stanbic go-live is pending."""
         amount = plan_amount(plan)
         checkout_request_id = f"DEMO-{telegram_chat_id}-{int(datetime.now(timezone.utc).timestamp())}"
 
@@ -232,7 +233,7 @@ class SubscriptionService:
         self.repo.complete_transaction(
             checkout_request_id=checkout_request_id,
             result_code=0,
-            result_desc="Demo payment (no M-Pesa charge)",
+            result_desc="Demo payment (no charge)",
             mpesa_receipt="DEMO",
             status="success",
         )
@@ -249,28 +250,20 @@ class SubscriptionService:
         return {"CheckoutRequestID": checkout_request_id, "demo": True, "auto": True}
 
     async def handle_stk_callback(self, payload: dict) -> SubscriberRecord | None:
-        body = payload.get("Body", {})
-        callback = body.get("stkCallback", {})
-        checkout_request_id = str(callback.get("CheckoutRequestID", ""))
-        result_code = int(callback.get("ResultCode", -1))
-        result_desc = str(callback.get("ResultDesc", ""))
+        parsed = parse_stk_callback(payload)
+        checkout_request_id = parsed["checkout_request_id"]
+        result_code = int(parsed["result_code"])
+        result_desc = str(parsed["result_desc"] or "")
 
         txn = self.repo.get_transaction_by_checkout(checkout_request_id)
         if not txn:
-            logger.warning("Unknown M-Pesa checkout request: %s", checkout_request_id)
+            logger.warning("Unknown payment checkout request: %s", checkout_request_id)
             return None
 
-        mpesa_receipt = None
+        mpesa_receipt = parsed.get("mpesa_receipt")
         phone = txn["phone"]
-        if result_code == 0:
-            metadata = callback.get("CallbackMetadata", {}).get("Item", [])
-            for item in metadata:
-                name = item.get("Name")
-                value = item.get("Value")
-                if name == "MpesaReceiptNumber":
-                    mpesa_receipt = str(value)
-                elif name == "PhoneNumber":
-                    phone = normalize_phone(str(value))
+        if parsed.get("phone"):
+            phone = normalize_phone(str(parsed["phone"]))
 
         status = "success" if result_code == 0 else "failed"
         self.repo.complete_transaction(

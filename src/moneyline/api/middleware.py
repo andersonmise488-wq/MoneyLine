@@ -54,7 +54,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         path = request.url.path
-        if path.startswith("/mpesa/callback") or path.startswith("/ws/"):
+        if path.startswith("/stanbic/callback") or path.startswith("/ws/"):
             key = f"{self._client_key(request)}:{path}"
             if not self._allow(key):
                 return Response("Too many requests", status_code=429)

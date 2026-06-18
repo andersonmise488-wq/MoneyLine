@@ -46,14 +46,7 @@ def _dispatch_alerts(opportunities) -> int:
         return 0
 
     async def _send() -> int:
-        from moneyline.alerts.routing import filter_telegram_alerts
-
-        to_send = filter_telegram_alerts(opportunities, deduplicate=True)
-        if not to_send:
-            return 0
-        from moneyline.alerts.telegram import send_arbitrage_alerts
-
-        return await send_arbitrage_alerts(to_send, deduplicate=False)
+        return await send_arbitrage_alerts(opportunities, deduplicate=True)
 
     try:
         return asyncio.run(_send())

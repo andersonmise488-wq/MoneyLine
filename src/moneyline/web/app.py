@@ -240,7 +240,7 @@ def render_admin_page() -> None:
                 "scan_min_margin_pct": settings.web_scan_min_margin_pct,
                 "public_max_margin_pct": settings.web_public_max_margin_pct,
                 "demo_mode": settings.subscription_demo_mode,
-                "mpesa_configured": settings.mpesa_configured(),
+                "stanbic_configured": settings.stanbic_configured(),
                 "telegram_bot": settings.telegram_bot_link(),
             }
         )

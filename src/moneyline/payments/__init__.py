@@ -1,3 +1,3 @@
-from moneyline.payments.mpesa import MpesaClient, MpesaError
+from moneyline.payments.stanbic import StanbicClient, StanbicError
 
-__all__ = ["MpesaClient", "MpesaError"]
+__all__ = ["StanbicClient", "StanbicError"]

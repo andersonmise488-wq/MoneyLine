@@ -20,16 +20,15 @@ class Settings(BaseSettings):
     telegram_chat_id: str = ""
     telegram_admin_chat_ids: str = ""
 
-    mpesa_env: str = "production"
-    mpesa_consumer_key: str = ""
-    mpesa_consumer_secret: str = ""
-    mpesa_shortcode: str = "7113597"
-    mpesa_till_number: str = "5074619"
-    mpesa_passkey: str = ""
-    mpesa_callback_url: str = ""
-    mpesa_transaction_type: str = "CustomerBuyGoodsOnline"
-    # daraja = Lipa na M-Pesa Online API | manual = till STK + admin /paid (fallback)
-    mpesa_payment_mode: str = "daraja"
+    stanbic_env: str = "sandbox"
+    stanbic_client_id: str = ""
+    stanbic_client_secret: str = ""
+    stanbic_bill_account_ref: str = ""
+    stanbic_callback_url: str = ""
+    stanbic_token_url: str = ""
+    stanbic_stk_url: str = ""
+    # stanbic = Stanbic Connect STK | manual = admin confirms payment via /paid
+    stanbic_payment_mode: str = "stanbic"
 
     subscription_weekly_kes: int = 400
     subscription_monthly_kes: int = 1200
@@ -41,11 +40,11 @@ class Settings(BaseSettings):
     web_scan_min_margin_pct: float = 0.0
     web_scan_max_events: int = 0  # 0 = all events in the 72h window
     web_scan_max_markets: int = 0  # 0 = fetch markets for all collected events
-    web_scan_interval_minutes: int = 2
-    web_scan_poll_seconds: int = 30
+    web_scan_interval_minutes: int = 20
+    web_scan_poll_seconds: int = 60
     scan_auto_alerts_enabled: bool = True
     alert_min_margin_pct: float = 5.0
-    alert_dedup_minutes: int = 60
+    alert_dedup_minutes: int = 20
     # Collection: match fixtures before market fetch; cache markets between cycles
     match_first_markets: bool = True
     market_fetch_concurrency: int = 50
@@ -61,34 +60,37 @@ class Settings(BaseSettings):
         username = self.telegram_bot_username.strip().lstrip("@")
         return f"https://t.me/{username}" if username else ""
 
-    def mpesa_configured(self) -> bool:
+    def stanbic_configured(self) -> bool:
         return bool(
-            self.mpesa_consumer_key.strip()
-            and self.mpesa_consumer_secret.strip()
-            and self.mpesa_passkey.strip()
-            and self.mpesa_callback_url.strip()
-            and "your-domain" not in self.mpesa_callback_url
+            self.stanbic_client_id.strip()
+            and self.stanbic_client_secret.strip()
+            and self.stanbic_bill_account_ref.strip()
+            and self.stanbic_callback_url.strip()
+            and "your-domain" not in self.stanbic_callback_url
         )
 
-    def uses_daraja_stk(self) -> bool:
-        return self.mpesa_payment_mode.strip().lower() == "daraja" and self.mpesa_configured()
+    def uses_stanbic_stk(self) -> bool:
+        return (
+            self.stanbic_payment_mode.strip().lower() == "stanbic"
+            and self.stanbic_configured()
+        )
 
     def uses_manual_stk(self) -> bool:
-        return self.mpesa_payment_mode.strip().lower() == "manual"
+        return self.stanbic_payment_mode.strip().lower() == "manual"
 
     def auto_activate_subscriptions(self) -> bool:
-        """Instant subscribe while Daraja go-live / passkey / callback are pending."""
+        """Instant subscribe while Stanbic credentials / callback are pending."""
         if self.subscription_demo_mode:
             return True
-        if self.mpesa_payment_mode.strip().lower() == "daraja" and not self.mpesa_configured():
+        if self.stanbic_payment_mode.strip().lower() == "stanbic" and not self.stanbic_configured():
             return True
         return False
 
     def billing_mode(self) -> str:
         if self.auto_activate_subscriptions():
             return "auto_activate"
-        if self.uses_daraja_stk():
-            return "daraja_stk"
+        if self.uses_stanbic_stk():
+            return "stanbic_stk"
         if self.uses_manual_stk():
             return "manual_stk"
         return "unconfigured"

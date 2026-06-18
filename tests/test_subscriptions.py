@@ -41,7 +41,7 @@ async def test_stk_callback_activates_subscriber(tmp_path) -> None:
     db_path = tmp_path / "subs.db"
     repo = SubscriptionRepository(db_path=db_path)
     repo.ensure_schema()
-    service = SubscriptionService(repo=repo, mpesa=None)
+    service = SubscriptionService(repo=repo, stanbic=None)
 
     chat_id = "123456"
     service.begin_subscription(
@@ -125,7 +125,7 @@ def test_resolve_alert_targets_includes_admin_and_subscribers(tmp_path, monkeypa
     )
     monkeypatch.setattr(
         "moneyline.subscriptions.service.SubscriptionService",
-        lambda repo=None, mpesa=None: SubscriptionService(
+        lambda repo=None, stanbic=None: SubscriptionService(
             repo=repo or SubscriptionRepository(db_path=db_path)
         ),
     )
@@ -165,7 +165,7 @@ def test_dashboard_stats_total_income(tmp_path) -> None:
     db_path = tmp_path / "subs.db"
     repo = SubscriptionRepository(db_path=db_path)
     repo.ensure_schema()
-    service = SubscriptionService(repo=repo, mpesa=None)
+    service = SubscriptionService(repo=repo, stanbic=None)
 
     repo.upsert_awaiting_phone(
         telegram_chat_id="222",
@@ -198,7 +198,7 @@ async def test_terminate_subscriber_disconnects_access(tmp_path, monkeypatch) ->
     db_path = tmp_path / "subs.db"
     repo = SubscriptionRepository(db_path=db_path)
     repo.ensure_schema()
-    service = SubscriptionService(repo=repo, mpesa=None)
+    service = SubscriptionService(repo=repo, stanbic=None)
 
     chat_id = "888"
     service.begin_subscription(
@@ -236,7 +236,7 @@ def test_write_dashboard_file(tmp_path) -> None:
     db_path = tmp_path / "subs.db"
     repo = SubscriptionRepository(db_path=db_path)
     repo.ensure_schema()
-    service = SubscriptionService(repo=repo, mpesa=None)
+    service = SubscriptionService(repo=repo, stanbic=None)
 
     out = tmp_path / "dash.html"
     path = service.write_dashboard(output=out)
@@ -246,27 +246,66 @@ def test_write_dashboard_file(tmp_path) -> None:
     assert "Total income" in html
 
 
-@pytest.mark.asyncio
-async def test_auto_activate_when_daraja_incomplete(tmp_path, monkeypatch) -> None:
+async def test_stk_callback_flat_stanbic_format(tmp_path) -> None:
     db_path = tmp_path / "subs.db"
     repo = SubscriptionRepository(db_path=db_path)
     repo.ensure_schema()
-    service = SubscriptionService(repo=repo, mpesa=None)
+    service = SubscriptionService(repo=repo, stanbic=None)
+
+    chat_id = "654321"
+    service.begin_subscription(
+        telegram_chat_id=chat_id,
+        telegram_username="stanbic_user",
+        plan=SubscriptionPlan.MONTHLY,
+    )
+    repo.set_pending_payment(
+        telegram_chat_id=chat_id,
+        phone="254712345678",
+        plan=SubscriptionPlan.MONTHLY,
+    )
+    repo.create_transaction(
+        checkout_request_id="ws_CO_flat",
+        merchant_request_id="mr_flat",
+        telegram_chat_id=chat_id,
+        plan=SubscriptionPlan.MONTHLY,
+        amount=1200,
+        phone="254712345678",
+    )
+
+    payload = {
+        "checkout_request_id": "ws_CO_flat",
+        "result_code": 0,
+        "result_desc": "The service request is processed successfully.",
+        "mpesa_receipt_number": "STB123",
+        "phone": "254712345678",
+    }
+
+    subscriber = await service.handle_stk_callback(payload)
+    assert subscriber is not None
+    assert subscriber.status == "active"
+
+
+@pytest.mark.asyncio
+async def test_auto_activate_when_stanbic_incomplete(tmp_path, monkeypatch) -> None:
+    db_path = tmp_path / "subs.db"
+    repo = SubscriptionRepository(db_path=db_path)
+    repo.ensure_schema()
+    service = SubscriptionService(repo=repo, stanbic=None)
 
     class AutoSettings:
         subscription_demo_mode = False
-        mpesa_payment_mode = "daraja"
+        stanbic_payment_mode = "stanbic"
 
         def auto_activate_subscriptions(self) -> bool:
             return True
 
-        def mpesa_configured(self) -> bool:
+        def stanbic_configured(self) -> bool:
             return False
 
         def uses_manual_stk(self) -> bool:
             return False
 
-        def uses_daraja_stk(self) -> bool:
+        def uses_stanbic_stk(self) -> bool:
             return False
 
     monkeypatch.setattr("moneyline.config.settings.get_settings", lambda: AutoSettings())
@@ -291,11 +330,11 @@ async def test_auto_activate_when_daraja_incomplete(tmp_path, monkeypatch) -> No
 
 
 @pytest.mark.asyncio
-async def test_demo_subscription_activates_without_mpesa(tmp_path, monkeypatch) -> None:
+async def test_demo_subscription_activates_without_charge(tmp_path, monkeypatch) -> None:
     db_path = tmp_path / "subs.db"
     repo = SubscriptionRepository(db_path=db_path)
     repo.ensure_schema()
-    service = SubscriptionService(repo=repo, mpesa=None)
+    service = SubscriptionService(repo=repo, stanbic=None)
 
     class DemoSettings:
         subscription_demo_mode = True
@@ -303,7 +342,7 @@ async def test_demo_subscription_activates_without_mpesa(tmp_path, monkeypatch) 
         def auto_activate_subscriptions(self) -> bool:
             return True
 
-        def mpesa_configured(self) -> bool:
+        def stanbic_configured(self) -> bool:
             return False
 
     monkeypatch.setattr("moneyline.config.settings.get_settings", lambda: DemoSettings())

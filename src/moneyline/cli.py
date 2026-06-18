@@ -509,14 +509,14 @@ def serve(
     port: int = typer.Option(8080, "--port"),
     verbose: bool = typer.Option(False, "--verbose", "-v"),
 ) -> None:
-    """Run the HTTP server for M-Pesa STK callbacks."""
+    """Run the HTTP server for subscription payment callbacks."""
     _setup_logging(verbose)
     import uvicorn
 
     console.print(f"[bold]Starting MoneyLine API[/] on http://{host}:{port}")
     console.print("Public live dashboard: [cyan]/[/]  (WS [cyan]/ws/public[/])")
     console.print("Admin live dashboard: [cyan]/admin[/]  (WS [cyan]/ws/scan[/])")
-    console.print("M-Pesa callback: [cyan]/mpesa/callback[/]")
+    console.print("Stanbic callback: [cyan]/stanbic/callback[/]")
     console.print("Subscriber dashboard: [cyan]/dashboard[/]")
     console.print("Prematch scanner + Telegram alerts run automatically with the API.")
     console.print("Telegram subscription bot starts automatically with the API.")
@@ -526,10 +526,10 @@ def serve(
     if billing == "auto_activate":
         console.print(
             "[yellow]Billing: auto-activate[/] — subscribers get alerts instantly "
-            "(Daraja STK switches on automatically once passkey + callback are set)."
+            "(Stanbic STK switches on automatically once credentials + callback are set)."
         )
-    elif billing == "daraja_stk":
-        console.print("[green]Billing: Daraja STK[/] — automated M-Pesa prompts.")
+    elif billing == "stanbic_stk":
+        console.print("[green]Billing: Stanbic STK[/] — automated M-Pesa prompts via Stanbic.")
     else:
         console.print(f"[yellow]Billing mode:[/] {billing}")
     uvicorn.run("moneyline.api.app:app", host=host, port=port, reload=False)
@@ -538,18 +538,18 @@ def serve(
 bot_app = typer.Typer(help="Telegram subscription bot")
 app.add_typer(bot_app, name="bot")
 
-mpesa_app = typer.Typer(help="M-Pesa Daraja STK")
-app.add_typer(mpesa_app, name="mpesa")
+stanbic_app = typer.Typer(help="Stanbic Bank Connect payments")
+app.add_typer(stanbic_app, name="stanbic")
 
 
-@mpesa_app.command("probe")
-def mpesa_probe() -> None:
-    """Check Daraja OAuth, STK credentials, and list what's missing."""
+@stanbic_app.command("probe")
+def stanbic_probe() -> None:
+    """Check Stanbic OAuth credentials and list what's missing."""
     import subprocess
     import sys
     from pathlib import Path
 
-    script = Path(__file__).resolve().parents[2] / "scripts" / "probe_daraja.py"
+    script = Path(__file__).resolve().parents[2] / "scripts" / "probe_stanbic.py"
     subprocess.run([sys.executable, str(script)], check=False)
 
 
@@ -591,13 +591,13 @@ def bot_info() -> None:
         console.print(
             "[yellow]Demo mode is on[/] — subscriptions activate instantly (no M-Pesa charge)."
         )
-    elif settings.uses_daraja_stk():
-        console.print("[green]Daraja STK mode[/] — automated M-Pesa prompts on subscribe.")
+    elif settings.uses_stanbic_stk():
+        console.print("[green]Stanbic STK mode[/] — automated M-Pesa prompts on subscribe.")
     elif settings.uses_manual_stk():
-        console.print("[yellow]Manual STK mode[/] — admin pushes from till.")
+        console.print("[yellow]Manual payment mode[/] — admin confirms via /paid.")
     else:
         console.print(
-            "[yellow]Daraja not fully configured[/] — run [bold]moneyline mpesa probe[/]"
+            "[yellow]Stanbic not fully configured[/] — run [bold]moneyline stanbic probe[/]"
         )
     console.print("\nStart the bot with: [bold]moneyline bot run[/]")
 

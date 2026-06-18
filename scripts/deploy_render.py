@@ -80,14 +80,14 @@ def _secret_env(local: dict[str, str]) -> list[dict]:
         "TELEGRAM_ADMIN_CHAT_IDS",
         "WEB_ADMIN_TOKEN",
         "WEB_ALLOWED_ORIGINS",
-        "MPESA_CONSUMER_KEY",
-        "MPESA_CONSUMER_SECRET",
-        "MPESA_PASSKEY",
-        "MPESA_CALLBACK_URL",
-        "MPESA_SHORTCODE",
-        "MPESA_TILL_NUMBER",
-        "MPESA_ENV",
-        "MPESA_TRANSACTION_TYPE",
+        "STANBIC_CLIENT_ID",
+        "STANBIC_CLIENT_SECRET",
+        "STANBIC_BILL_ACCOUNT_REF",
+        "STANBIC_CALLBACK_URL",
+        "STANBIC_ENV",
+        "STANBIC_PAYMENT_MODE",
+        "STANBIC_TOKEN_URL",
+        "STANBIC_STK_URL",
         "SUBSCRIPTION_DEMO_MODE",
     ]
     out: list[dict] = []
@@ -159,7 +159,7 @@ def main() -> None:
 
     base = _service_url(svc)
     local["WEB_ALLOWED_ORIGINS"] = base
-    local["MPESA_CALLBACK_URL"] = f"{base}/mpesa/callback"
+    local["STANBIC_CALLBACK_URL"] = f"{base}/stanbic/callback"
     env_vars = _static_env() + _secret_env(local)
     _update_env(sid, env_vars)
 

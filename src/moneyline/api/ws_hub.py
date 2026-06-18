@@ -14,7 +14,7 @@ from moneyline.models.schemas import ArbitrageOpportunity
 from moneyline.web.cache import ScanSnapshot
 from moneyline.config.settings import get_settings
 from moneyline.alerts.routing import filter_premium_feed, filter_public_feed, filter_realistic_for_feed
-from moneyline.web.filters import filter_premium_arbs
+from moneyline.web.feed_diff import ArbFeedDiff
 
 logger = logging.getLogger(__name__)
 
@@ -83,47 +83,83 @@ def _leg_payload(leg: dict, *, sport: str = "", market_key: str = "") -> dict[st
     return payload
 
 
+def _public_opportunity_row(opp: ArbitrageOpportunity) -> dict[str, Any]:
+    return {
+        "opportunity_id": opportunity_id(opp),
+        "match": participants_label(opp),
+        "margin_pct": round(opp.margin_pct, 2),
+        "sport": sport_heading(opp.sport),
+        "market": opp.market_display or opp.market_key,
+        "market_key": opp.market_key,
+        "line": opp.line,
+        "home_team": opp.home_team,
+        "away_team": opp.away_team,
+        "legs": [
+            _leg_payload(
+                leg,
+                sport=opp.sport.value,
+                market_key=opp.market_key,
+            )
+            for leg in opp.legs
+        ],
+    }
+
+
+def _admin_feed_meta(snapshot: ScanSnapshot, active: list[ArbitrageOpportunity]) -> dict[str, Any]:
+    settings = get_settings()
+    premium = filter_premium_feed(active, settings=settings)
+    free = filter_public_feed(active, settings=settings)
+    return {
+        "scanned_at": snapshot.scanned_at.isoformat() if snapshot.scanned_at else None,
+        "scanning": snapshot.scanning,
+        "error": snapshot.error,
+        "min_margin_pct": snapshot.min_margin_pct,
+        "max_events": snapshot.max_events,
+        "max_markets": snapshot.max_markets,
+        "total": len(active),
+        "premium_count": len(premium),
+        "free_count": len(free),
+        "diagnostics": snapshot.diagnostics,
+        "stale_filtered": len(snapshot.opportunities) - len(
+            _filter_fresh_opportunities(snapshot.opportunities)
+        ),
+    }
+
+
 def snapshot_to_public_payload(snapshot: ScanSnapshot) -> dict[str, Any]:
     """Free-band feed (≤3%) with legs for stake calculator."""
     settings = get_settings()
     live = _filter_fresh_opportunities(snapshot.opportunities)
-    free = filter_public_feed(live, settings=settings)
-    premium = filter_premium_feed(live, settings=settings)
+    active = filter_realistic_for_feed(live, settings=settings)
+    free = filter_public_feed(active, settings=settings)
+    premium = filter_premium_feed(active, settings=settings)
     return {
         "type": "public_snapshot",
         "scanning": snapshot.scanning,
         "total": len(free),
         "premium_count": len(premium),
         "public_max_margin_pct": settings.web_public_max_margin_pct,
-        "opportunities": [
-            {
-                "match": participants_label(opp),
-                "margin_pct": round(opp.margin_pct, 2),
-                "sport": sport_heading(opp.sport),
-                "market": opp.market_display or opp.market_key,
-                "market_key": opp.market_key,
-                "line": opp.line,
-                "home_team": opp.home_team,
-                "away_team": opp.away_team,
-                "legs": [
-                    _leg_payload(
-                        leg,
-                        sport=opp.sport.value,
-                        market_key=opp.market_key,
-                    )
-                    for leg in opp.legs
-                ],
-            }
-            for opp in free[:50]
-        ],
+        "opportunities": [_public_opportunity_row(o) for o in free[:50]],
     }
+
+
+def _admin_active_opportunities(snapshot: ScanSnapshot) -> list[ArbitrageOpportunity]:
+    settings = get_settings()
+    live = _filter_fresh_opportunities(snapshot.opportunities)
+    return filter_realistic_for_feed(live, settings=settings)
+
+
+def _public_free_opportunities(snapshot: ScanSnapshot) -> list[ArbitrageOpportunity]:
+    settings = get_settings()
+    active = _admin_active_opportunities(snapshot)
+    free = filter_public_feed(active, settings=settings)
+    return free[:50]
 
 
 def snapshot_to_admin_payload(snapshot: ScanSnapshot) -> dict[str, Any]:
     """Full feed — all arbs, no upper margin cap."""
+    active = _admin_active_opportunities(snapshot)
     settings = get_settings()
-    live = _filter_fresh_opportunities(snapshot.opportunities)
-    active = filter_realistic_for_feed(live, settings=settings)
     premium = filter_premium_feed(active, settings=settings)
     free = filter_public_feed(active, settings=settings)
     payload = snapshot_to_payload(snapshot)
@@ -131,7 +167,9 @@ def snapshot_to_admin_payload(snapshot: ScanSnapshot) -> dict[str, Any]:
     payload["total"] = len(active)
     payload["premium_count"] = len(premium)
     payload["free_count"] = len(free)
-    payload["stale_filtered"] = len(snapshot.opportunities) - len(live)
+    payload["stale_filtered"] = len(snapshot.opportunities) - len(
+        _filter_fresh_opportunities(snapshot.opportunities)
+    )
     return payload
 
 
@@ -142,6 +180,8 @@ class ScanWebSocketHub:
         self._admin_clients: set[WebSocket] = set()
         self._public_clients: set[WebSocket] = set()
         self._lock = asyncio.Lock()
+        self._admin_diff = ArbFeedDiff()
+        self._public_diff = ArbFeedDiff()
 
     async def connect_admin(self, websocket: WebSocket) -> None:
         await websocket.accept()
@@ -186,8 +226,36 @@ class ScanWebSocketHub:
         await self._broadcast_to(self._public_clients, message)
 
     async def broadcast_snapshot(self, snapshot: ScanSnapshot) -> None:
-        await self.broadcast_admin(snapshot_to_admin_payload(snapshot))
-        await self.broadcast_public(snapshot_to_public_payload(snapshot))
+        settings = get_settings()
+        active = _admin_active_opportunities(snapshot)
+        added, updated, removed = self._admin_diff.compute(active)
+        admin_msg: dict[str, Any] = {
+            "type": "arb_delta",
+            **self._admin_feed_meta(snapshot, active),
+            "added": [_serialize_opportunity(o) for o in added],
+            "updated": [_serialize_opportunity(o) for o in updated],
+            "removed": removed,
+        }
+        await self.broadcast_admin(admin_msg)
+
+        free = _public_free_opportunities(snapshot)
+        premium = filter_premium_feed(active, settings=settings)
+        added_p, updated_p, removed_p = self._public_diff.compute(free)
+        public_msg: dict[str, Any] = {
+            "type": "arb_delta",
+            "scanning": snapshot.scanning,
+            "total": len(free),
+            "premium_count": len(premium),
+            "public_max_margin_pct": settings.web_public_max_margin_pct,
+            "added": [_public_opportunity_row(o) for o in added_p],
+            "updated": [_public_opportunity_row(o) for o in updated_p],
+            "removed": removed_p,
+        }
+        await self.broadcast_public(public_msg)
+
+    def reset_feed_diffs(self) -> None:
+        self._admin_diff.reset()
+        self._public_diff.reset()
 
     async def broadcast_scan_start(
         self,

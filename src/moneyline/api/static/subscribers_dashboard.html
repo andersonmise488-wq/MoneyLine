@@ -239,6 +239,7 @@
         renderStats(data.stats);
         renderSubscribers(data.subscribers);
         renderPayments(data.recent_payments || []);
+        document.getElementById("status").textContent = `Live · ${(data.subscribers || []).length} subscribers · refreshed ${new Date().toLocaleTimeString()}`;
       } catch (err) {
         document.getElementById("status").textContent = err.message || "Failed to load";
         window.MoneyLineShell.showToast(err.message || "Failed to load subscribers", "err");

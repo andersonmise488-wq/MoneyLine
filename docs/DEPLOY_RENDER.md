@@ -21,7 +21,7 @@
 | `TELEGRAM_ADMIN_CHAT_IDS` | Optional | Overrides admin routing |
 | `WEB_ADMIN_TOKEN` | Recommended | Protects admin WS `scan` command |
 | `WEB_ALLOWED_ORIGINS` | Recommended | e.g. `https://moneyline.onrender.com` |
-| `MPESA_*` | For billing | Consumer key, secret, passkey, callback URL |
+| `STANBIC_*` | For billing | Client ID, secret, bill account, callback URL |
 
 Scan tuning is pre-set in `render.yaml` (full 72h window, no stale cache).
 
@@ -30,9 +30,9 @@ Scan tuning is pre-set in `render.yaml` (full 72h window, no stale cache).
 - Public dashboard: `https://<your-service>.onrender.com/`
 - Admin: `https://<your-service>.onrender.com/admin`
 - Health: `https://<your-service>.onrender.com/health`
-- M-Pesa callback: `https://<your-service>.onrender.com/mpesa/callback`
+- Payment callback: `https://<your-service>.onrender.com/stanbic/callback`
 
-Set `MPESA_CALLBACK_URL` to that callback URL and `WEB_ALLOWED_ORIGINS` to your Render URL.
+Set `STANBIC_CALLBACK_URL` to that callback URL and `WEB_ALLOWED_ORIGINS` to your Render URL.
 
 ## BangBet circuit breaker
 

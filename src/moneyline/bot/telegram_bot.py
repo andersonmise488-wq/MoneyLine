@@ -7,7 +7,7 @@ import re
 
 from moneyline.alerts.telegram import TelegramAlertError, send_message
 from moneyline.config.settings import get_admin_chat_ids, get_settings
-from moneyline.payments.mpesa import MpesaError
+from moneyline.payments.stanbic import StanbicError
 from moneyline.subscriptions.models import SubscriptionPlan
 from moneyline.subscriptions.plans import display_phone, normalize_phone, plan_amount, plan_label
 from moneyline.subscriptions.service import SubscriptionService
@@ -184,13 +184,13 @@ class TelegramBot:
         plan: SubscriptionPlan,
     ) -> None:
         settings = get_settings()
-        till = settings.mpesa_till_number.strip() or "your till"
+        account = settings.stanbic_bill_account_ref.strip() or "your Stanbic account"
         local_phone = display_phone(phone)
         user_label = f"@{username}" if username else "no username"
 
         text = (
             "<b>📲 STK PUSH REQUIRED</b>\n"
-            f"Push Lipa na M-Pesa STK from till <b>{till}</b>\n\n"
+            f"Push M-Pesa STK to Stanbic account <b>{account}</b>\n\n"
             f"<b>Phone:</b> {local_phone} ({phone})\n"
             f"<b>Amount:</b> KES {plan_amount(plan):,}\n"
             f"<b>Plan:</b> {plan_label(plan)}\n"
@@ -235,7 +235,7 @@ class TelegramBot:
                 phone_raw=phone,
                 plan=plan,
             )
-        except (MpesaError, ValueError) as exc:
+        except (StanbicError, ValueError) as exc:
             await self._reply(chat_id, f"Payment setup failed: {exc}")
             return
 
@@ -294,12 +294,11 @@ class TelegramBot:
                 "\n\nSend /subscribe, then your M-Pesa number — "
                 "alerts start immediately."
             )
-        elif settings.uses_daraja_stk():
-            pay_note = "\n\nPay via M-Pesa STK push after sending your number."
+        elif settings.uses_stanbic_stk():
+            pay_note = "\n\nPay via M-Pesa STK push (Stanbic) after sending your number."
         elif settings.uses_manual_stk():
             pay_note = (
-                f"\n\nPay via M-Pesa STK to till <b>{settings.mpesa_till_number}</b> "
-                "after sending your number."
+                "\n\nAn admin will confirm your M-Pesa payment after you send your number."
             )
         else:
             pay_note = "\n\nContact admin to complete subscription setup."
@@ -332,7 +331,7 @@ class TelegramBot:
                 [
                     "",
                     "<b>Admin</b>",
-                    "/paid CHAT_ID RECEIPT — confirm till STK payment",
+                    "/paid CHAT_ID RECEIPT — confirm manual payment",
                 ]
             )
         return "\n".join(lines)
