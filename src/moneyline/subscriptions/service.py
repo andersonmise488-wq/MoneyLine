@@ -4,7 +4,12 @@ import logging
 from datetime import datetime, timezone
 
 from moneyline.config.settings import get_settings
-from moneyline.payments.stanbic import StanbicClient, StanbicError, parse_stk_callback
+from moneyline.payments.stanbic import (
+    StanbicClient,
+    StanbicError,
+    normalize_dbs_reference_id,
+    parse_stk_callback,
+)
 from moneyline.storage.subscriptions import SubscriptionRepository
 from moneyline.subscriptions.dashboard import write_dashboard_file
 from moneyline.subscriptions.models import SubscriberRecord, SubscriptionPlan
@@ -115,7 +120,9 @@ class SubscriptionService:
             plan=plan,
         )
 
-        reference = f"ML{plan.value[:3].upper()}{telegram_chat_id.replace('-', '')}"
+        reference = normalize_dbs_reference_id(
+            f"ML{plan.value[:3].upper()}{telegram_chat_id.replace('-', '')}"
+        )
         response = await self.stanbic.stk_push(
             phone=phone,
             amount=amount,

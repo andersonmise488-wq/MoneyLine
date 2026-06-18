@@ -1,9 +1,38 @@
 """Tests for Stanbic payment helpers."""
 
-from moneyline.payments.stanbic import normalize_stk_response, parse_stk_callback
+import pytest
+
+from moneyline.payments.stanbic import (
+    format_stk_amount,
+    normalize_dbs_reference_id,
+    normalize_stk_response,
+    parse_stk_callback,
+    StanbicError,
+)
 
 
-def test_normalize_stk_response_stanbic_success_shape() -> None:
+def test_format_stk_amount() -> None:
+    assert format_stk_amount(400) == "400.00"
+    assert format_stk_amount(1200) == "1200.00"
+
+
+def test_normalize_dbs_reference_id_strips_non_alnum() -> None:
+    assert normalize_dbs_reference_id("ML-MON--1003860766281") == "MLMON1003860766281"
+
+
+def test_normalize_stk_response_swagger_success() -> None:
+    data = {
+        "dbsReferenceId": "REW21331DR5F1",
+        "status": "Success",
+        "statusMessage": "Request processed successfully",
+    }
+    out = normalize_stk_response(data)
+    assert out["CheckoutRequestID"] == "REW21331DR5F1"
+    assert out["ResponseDescription"] == "Request processed successfully"
+    assert out["status"] == "Success"
+
+
+def test_normalize_stk_response_legacy_response_message() -> None:
     data = {
         "dbsReferenceId": "MLMON1003860766281",
         "status": "Success",
@@ -11,7 +40,17 @@ def test_normalize_stk_response_stanbic_success_shape() -> None:
     }
     out = normalize_stk_response(data)
     assert out["CheckoutRequestID"] == "MLMON1003860766281"
-    assert out["ResponseDescription"] == "Request processed successfully"
+
+
+def test_normalize_stk_response_error_message() -> None:
+    with pytest.raises(StanbicError, match="Invalid mobile number"):
+        normalize_stk_response(
+            {
+                "dbsReferenceId": "REW21331DR5F1",
+                "responseCode": "2001",
+                "responseMessage": "Invalid mobile number",
+            }
+        )
 
 
 def test_parse_stk_callback_stanbic_status_success() -> None:
@@ -19,7 +58,7 @@ def test_parse_stk_callback_stanbic_status_success() -> None:
         {
             "dbsReferenceId": "MLMON1003860766281",
             "status": "Success",
-            "responseMessage": "Payment completed",
+            "statusMessage": "Payment completed",
             "mpesa_receipt_number": "ABC123",
         }
     )

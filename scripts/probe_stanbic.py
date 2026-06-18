@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from moneyline.config.settings import get_settings
-from moneyline.payments.stanbic import StanbicClient, StanbicError, SANDBOX_API_BASE, PRODUCTION_API_BASE
+from moneyline.payments.stanbic import StanbicClient, StanbicError
 
 
 def _mask(value: str) -> str:
@@ -23,11 +23,11 @@ def _mask(value: str) -> str:
 def main() -> None:
     settings = get_settings()
     env = settings.stanbic_env.strip().lower()
-    base = PRODUCTION_API_BASE if env == "production" else SANDBOX_API_BASE
+    client = StanbicClient()
 
     print("=== Stanbic Connect probe ===")
     print(f"STANBIC_ENV:              {env}")
-    print(f"API base:                 {base}")
+    print(f"STK endpoint (Swagger):    {client.stk_url()}")
     print(f"STANBIC_PAYMENT_MODE:     {settings.stanbic_payment_mode}")
     print(f"Client ID:                {_mask(settings.stanbic_client_id)}")
     print(f"Client secret:            {'set' if settings.stanbic_client_secret.strip() else 'MISSING'}")
@@ -40,9 +40,7 @@ def main() -> None:
         print("Set STANBIC_CLIENT_ID and STANBIC_CLIENT_SECRET from the Stanbic developer portal.")
         sys.exit(1)
 
-    client = StanbicClient()
     print(f"Token URL: {client.token_url()}")
-    print(f"STK URL:   {client.stk_url()}")
     print("Requesting OAuth token…")
 
     async def _run() -> None:
