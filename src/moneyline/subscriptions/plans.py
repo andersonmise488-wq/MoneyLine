@@ -13,6 +13,11 @@ def plan_amount(plan: SubscriptionPlan) -> int:
     return int(settings.subscription_monthly_kes)
 
 
+def plan_reference_token(plan: SubscriptionPlan) -> str:
+    """Short token for payment references (W=weekly, M=monthly)."""
+    return "W" if plan == SubscriptionPlan.WEEKLY else "M"
+
+
 def plan_label(plan: SubscriptionPlan) -> str:
     return "Weekly" if plan == SubscriptionPlan.WEEKLY else "Monthly"
 

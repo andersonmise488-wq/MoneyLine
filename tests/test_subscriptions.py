@@ -6,9 +6,81 @@ import pytest
 
 from moneyline.alerts.telegram import resolve_alert_targets
 from moneyline.subscriptions.models import SubscriptionPlan
-from moneyline.subscriptions.plans import extend_expiry, normalize_phone
+from moneyline.subscriptions.plans import extend_expiry, normalize_phone, plan_amount, plan_reference_token
 from moneyline.subscriptions.service import SubscriptionService
 from moneyline.storage.subscriptions import SubscriptionRepository
+
+
+def test_plan_reference_token() -> None:
+    assert plan_reference_token(SubscriptionPlan.WEEKLY) == "W"
+    assert plan_reference_token(SubscriptionPlan.MONTHLY) == "M"
+
+
+def test_weekly_plan_amount() -> None:
+    assert plan_amount(SubscriptionPlan.WEEKLY) == 400
+    assert plan_amount(SubscriptionPlan.MONTHLY) == 1200
+
+
+@pytest.mark.asyncio
+async def test_weekly_stk_push_uses_weekly_amount_and_reference(tmp_path, monkeypatch) -> None:
+    db_path = tmp_path / "subs.db"
+    repo = SubscriptionRepository(db_path=db_path)
+    repo.ensure_schema()
+
+    captured: dict = {}
+
+    class FakeStanbic:
+        async def stk_push(self, phone: str, amount: int, account_reference: str) -> dict:
+            captured["phone"] = phone
+            captured["amount"] = amount
+            captured["ref"] = account_reference
+            return {
+                "CheckoutRequestID": account_reference,
+                "MerchantRequestID": "mr_weekly",
+            }
+
+    class StanbicSettings:
+        subscription_demo_mode = False
+        stanbic_payment_mode = "stanbic"
+        stanbic_client_id = "id"
+        stanbic_client_secret = "secret"
+        stanbic_bill_account_ref = "0100011077913"
+        stanbic_callback_url = "https://example.com/stanbic/callback"
+
+        def auto_activate_subscriptions(self) -> bool:
+            return False
+
+        def stanbic_configured(self) -> bool:
+            return True
+
+        def uses_manual_stk(self) -> bool:
+            return False
+
+        def uses_stanbic_stk(self) -> bool:
+            return True
+
+    monkeypatch.setattr("moneyline.config.settings.get_settings", lambda: StanbicSettings())
+    monkeypatch.setattr("moneyline.subscriptions.service.get_settings", lambda: StanbicSettings())
+
+    service = SubscriptionService(repo=repo, stanbic=FakeStanbic())
+    chat_id = "1003860766281"
+    service.begin_subscription(
+        telegram_chat_id=chat_id,
+        telegram_username="weekly_user",
+        plan=SubscriptionPlan.WEEKLY,
+    )
+    await service.initiate_stk_push(
+        telegram_chat_id=chat_id,
+        phone_raw="0712345678",
+        plan=SubscriptionPlan.WEEKLY,
+    )
+
+    assert captured["amount"] == 400
+    assert captured["ref"] == f"MLW{chat_id}"
+    txn = repo.get_transaction_by_checkout(captured["ref"])
+    assert txn is not None
+    assert txn["plan"] == "weekly"
+    assert txn["amount"] == 400
 
 
 def test_normalize_phone_local_format() -> None:

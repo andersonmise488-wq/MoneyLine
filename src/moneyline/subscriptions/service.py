@@ -13,7 +13,7 @@ from moneyline.payments.stanbic import (
 from moneyline.storage.subscriptions import SubscriptionRepository
 from moneyline.subscriptions.dashboard import write_dashboard_file
 from moneyline.subscriptions.models import SubscriberRecord, SubscriptionPlan
-from moneyline.subscriptions.plans import extend_expiry, normalize_phone, plan_amount, plan_label
+from moneyline.subscriptions.plans import extend_expiry, normalize_phone, plan_amount, plan_label, plan_reference_token
 from moneyline.subscriptions.stats import DashboardData, SubscriptionStats
 from moneyline.timezone import format_eat
 
@@ -121,7 +121,7 @@ class SubscriptionService:
         )
 
         reference = normalize_dbs_reference_id(
-            f"ML{plan.value[:3].upper()}{telegram_chat_id.replace('-', '')}"
+            f"ML{plan_reference_token(plan)}{telegram_chat_id.replace('-', '')}"
         )
         response = await self.stanbic.stk_push(
             phone=phone,

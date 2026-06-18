@@ -15,7 +15,11 @@ from moneyline.timezone import format_eat
 
 logger = logging.getLogger(__name__)
 
-PLAN_PATTERN = re.compile(r"^/subscribe(?:@\w+)?(?:\s+(weekly|monthly))?$", re.I)
+PLAN_PATTERN = re.compile(
+    r"^/subscribe(?:@[\w_]+)?(?:\s+(weekly|monthly))?\s*$",
+    re.I,
+)
+PLAN_CHOICE_PATTERN = re.compile(r"^(weekly|monthly)$", re.I)
 PHONE_PATTERN = re.compile(r"^[\d+\s-]{9,15}$")
 PAID_PATTERN = re.compile(
     r"^/(?:paid|activate)(?:@\w+)?\s+(\d+)(?:\s+(\S+))?$",
@@ -117,8 +121,38 @@ class TelegramBot:
                     "Subscription cancelled. You will not receive paid alerts.",
                 )
             elif PLAN_PATTERN.match(text):
-                plan_name = PLAN_PATTERN.match(text).group(1) or "monthly"
+                plan_name = PLAN_PATTERN.match(text).group(1)
+                if not plan_name:
+                    await self._reply(
+                        chat_id_str,
+                        (
+                            "Choose a plan:\n"
+                            "/subscribe weekly — KES "
+                            f"{self.settings.subscription_weekly_kes:,}\n"
+                            "/subscribe monthly — KES "
+                            f"{self.settings.subscription_monthly_kes:,}"
+                        ),
+                    )
+                    return
                 plan = SubscriptionPlan(plan_name.lower())
+                self.service.begin_subscription(
+                    telegram_chat_id=chat_id_str,
+                    telegram_username=username,
+                    plan=plan,
+                )
+                await self._reply(
+                    chat_id_str,
+                    self._subscribe_prompt(plan),
+                )
+            elif PLAN_CHOICE_PATTERN.match(text):
+                sub = self.service.get_subscriber(chat_id_str)
+                if sub is None or sub.status != "awaiting_phone":
+                    await self._reply(
+                        chat_id_str,
+                        "Start with /subscribe weekly or /subscribe monthly.",
+                    )
+                    return
+                plan = SubscriptionPlan(text.lower())
                 self.service.begin_subscription(
                     telegram_chat_id=chat_id_str,
                     telegram_username=username,
@@ -222,7 +256,14 @@ class TelegramBot:
             await self._reply(chat_id, "Choose a plan first: /subscribe weekly or /subscribe monthly")
             return
 
-        plan = sub.plan or SubscriptionPlan.MONTHLY
+        if sub.plan is None:
+            await self._reply(
+                chat_id,
+                "Plan not set. Use /subscribe weekly or /subscribe monthly, then send your number.",
+            )
+            return
+
+        plan = sub.plan
         try:
             phone = normalize_phone(text)
         except ValueError as exc:
@@ -294,7 +335,7 @@ class TelegramBot:
         settings = get_settings()
         if settings.auto_activate_subscriptions():
             pay_note = (
-                "\n\nSend /subscribe, then your M-Pesa number — "
+                "\n\nSend /subscribe weekly or /subscribe monthly, then your M-Pesa number — "
                 "alerts start immediately."
             )
         elif settings.uses_stanbic_stk():
